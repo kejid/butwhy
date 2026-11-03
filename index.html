@@ -437,7 +437,7 @@ const pride = () => ({
     { id: 'p3', part: 'mid', text: 'Mr. Collins, heir to the Bennet estate, proposes. Elizabeth refuses him, and three days later he proposes to her friend Charlotte, who accepts.', link: 'then', out: 'down', who: ['hero', 'collins'] },
     { id: 'p4', part: 'mid', text: 'The charming officer Wickham tells Elizabeth that Darcy cheated him out of the living his father promised him.', link: 'then', out: 'down', who: ['hero', 'wickham'] },
     { id: 'p5', line: 'jane', part: 'mid', text: 'But Bingley leaves for London without a word, and Jane is heartbroken.', link: 'but', out: 'down', who: ['jane', 'bingley'] },
-    { id: 'p6', also: 'jane', part: 'mid', text: 'But at Hunsford Darcy proposes, insulting her family as he does it. Elizabeth refuses him and accuses him of ruining Jane and Wickham.', link: 'but', out: 'down', who: ['hero', 'darcy'] },
+    { id: 'p6', also: 'jane', part: 'mid', text: 'But at Hunsford, after weeks of dinners at his aunt Lady Catherine’s, Darcy proposes, insulting her family as he does it. Elizabeth refuses him and accuses him of ruining Jane and Wickham.', link: 'but', out: 'down', who: ['hero', 'darcy', 'catherine'] },
     { id: 'p7', part: 'mid', text: 'Therefore Darcy hands her a letter: Wickham tried to elope with his fifteen-year-old sister, and he parted Bingley from Jane believing she didn’t love him. “Till this moment I never knew myself.”', link: 'so', out: 'up', who: ['hero', 'darcy'] },
     { id: 'p8', part: 'mid', text: 'Touring Pemberley with her aunt and uncle, Elizabeth runs into Darcy, who is warm and gracious to the relatives he once sneered at.', link: 'then', out: 'up', who: ['hero', 'darcy'] },
     { id: 'p9', part: 'mid', text: 'But Lydia runs off with Wickham, unmarried: a scandal that will ruin every one of the sisters.', link: 'but', out: 'down', who: ['hero', 'lydia', 'wickham', 'darcy'] },
@@ -871,7 +871,8 @@ function renderAsk(typing = false) {
   }
   box.append(h('div', { class: 'label' }, `But why? · ${L.length} ${plural(L.length, 'question', 'questions')}`), h('h3', {}, it.q), h('p', {}, it.h), controls(it))
   const el = it.scene && document.querySelector(`[data-scene="${it.scene}"]`)
-  if (el) { el.classList.add('focus'); if (!typing && lastScrolled !== it.key) { lastScrolled = it.key; el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) } }
+  // While the intro is open, don't scroll it away: a first-time visitor must see it.
+  if (el) { el.classList.add('focus'); if (!typing && lastScrolled !== it.key && $('#intro').hidden) { lastScrolled = it.key; el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) } }
   box.append(h('div', { class: 'row', style: 'margin-top:12px;justify-content:space-between' },
     btn('Skip', () => { S.skipped.push(it.key); picked = null; commit() }, 'skip'), skippedLink()))
   if (L.length > 1) {
