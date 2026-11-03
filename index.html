@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Butwhy</title>
 <meta name="description" content="Find the holes in your plot. Butwhy reads your outline and asks one question at a time about its weakest spot. No AI, no account, nothing leaves your browser.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kejid.github.io/butwhy/">
+<meta property="og:title" content="Butwhy: find the holes in your plot">
+<meta property="og:description" content="Paste your outline. Butwhy checks how each scene connects to the last and asks one question at a time about the weakest spot. No AI, no account.">
+<meta property="og:image" content="https://kejid.github.io/butwhy/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -37,6 +45,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .top{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-block:12px;max-width:1240px;margin:0 auto;border-bottom:1px solid var(--border)}
+@media (max-width:640px){.top{position:static}}
 .brand{font:600 19px var(--f-story)}
 .tagline{color:var(--muted);font-size:13px}
 .tabs{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:9px}
@@ -51,6 +60,20 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:32px;max-width:1
 .label{font:600 11px/1.2 var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .muted{color:var(--muted)}
 
+.intro{position:relative;max-width:1240px;margin:20px auto 0;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:32px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 32px}
+@media (max-width:920px){.intro{grid-template-columns:1fr;gap:20px;padding:22px 18px}}
+.intro h1{margin:0 0 10px;font:600 clamp(26px,4vw,36px)/1.15 var(--f-story)}
+.intro .lede{margin:0 0 18px;font:17px/1.6 var(--f-story)}
+.intro .lede b{font-weight:600}
+.intro .lede .so{color:var(--so)} .intro .lede .but{color:var(--but)} .intro .lede .then{color:var(--then)}
+.intro-points{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:6px;color:var(--muted);font-size:14px}
+.intro-points b{color:var(--text);font-weight:600}
+.intro-points a{color:var(--accent)}
+.intro-side .label{margin-bottom:8px}
+.intro-side .idea b{display:block;font:600 12px/1.3 var(--f-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.intro-side .note{margin:4px 0 0;color:var(--muted);font-size:13px}
+.intro-x{position:absolute;top:10px;right:12px;border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:4px 8px;border-radius:6px}
+.intro-x:hover{background:var(--surface-2);color:var(--text)}
 .paste{max-width:1240px;margin:16px auto 0;background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:16px 18px}
 .paste h2{margin:0 0 4px;font:600 18px var(--f-story)}
 .paste p{margin:0 0 10px;color:var(--muted);font-size:14px}
@@ -184,6 +207,7 @@ footer a{color:inherit}
     <button id="tab-plan" type="button">Plan</button>
   </div>
   <div class="spacer"></div>
+  <button id="btn-about" class="ghost" type="button" aria-controls="intro">About</button>
   <button id="btn-paste" class="ghost" type="button">Paste outline</button>
   <select id="btn-example" class="ghost" aria-label="Open an example">
     <option value="">Examples…</option>
@@ -196,6 +220,27 @@ footer a{color:inherit}
   </select>
   <button id="btn-blank" class="ghost" type="button">New story</button>
 </header>
+<section id="intro" class="intro" aria-labelledby="intro-title" hidden>
+  <button id="intro-close" class="intro-x" type="button" aria-label="Hide the intro">×</button>
+  <div>
+    <h1 id="intro-title">Find the holes in your plot.</h1>
+    <p class="lede">Paste your outline, one scene per line. For each scene, say whether it happens <b class="so">therefore</b> or <b class="but">but</b>, or just <b class="then">and then</b>. Butwhy asks one question at a time about the weakest spot: the scene that only follows the last one, the antagonist who vanishes in the middle, the ending decided by luck.</p>
+    <div class="row"><button id="intro-paste" class="btn" type="button">Paste your outline</button><button id="intro-look" class="btn alt" type="button">Look around first</button></div>
+    <ul class="intro-points">
+      <li><b>Rules, not AI.</b> Same answer every time, and you can see why it asked.</li>
+      <li><b>Nothing leaves your browser.</b> No account, no upload.</li>
+      <li><b>Free and open source.</b> <a href="https://github.com/kejid/butwhy">Code on GitHub</a>.</li>
+    </ul>
+  </div>
+  <div class="intro-side">
+    <div class="label">What it asks the classics</div>
+    <button class="idea" type="button" data-example="carol"><b>A Christmas Carol</b>“There is not a single ‘but’ in the middle.”</button>
+    <button class="idea" type="button" data-example="romeo"><b>Romeo and Juliet</b>“Who decides the outcome?” A letter that never arrives.</button>
+    <button class="idea" type="button" data-example="pride"><b>Pride and Prejudice</b>“Scene 8 just follows scene 7.” The trip to Pemberley.</button>
+    <button class="idea" type="button" data-example="hound"><b>The Hound of the Baskervilles</b>“Scenes 1–3: worse and worse.”</button>
+    <p class="note">Questions, not verdicts. The classics break these rules on purpose; the point is to know when you do.</p>
+  </div>
+</section>
 <section id="paste" class="paste" hidden>
   <h2>Start from your outline</h2>
   <p>One scene per line. Numbers and bullets are fine. Lines like “Act 1”, “Act 2”, “Act 3” (or “Beginning”, “Middle”, “End”) split the story into parts; without them, Butwhy guesses. A line that starts with “But” or “Therefore” keeps that link. This replaces the story on screen.</p>
@@ -213,7 +258,7 @@ footer a{color:inherit}
 </main>
 <section id="lines" class="lines-view" hidden></section>
 <section id="plan" class="plan" hidden></section>
-<footer>Butwhy runs entirely in your browser. No AI, no account; your story is saved only on this device. Built on the “but / therefore” rule of storytelling.</footer>
+<footer>Butwhy runs entirely in your browser. No AI, no account; your story is saved only on this device. Built on the “but / therefore” rule of storytelling. <a href="https://github.com/kejid/butwhy">Source on GitHub</a>.</footer>
 
 <script>
 const STORE = 'butwhy-story-v1'
@@ -389,10 +434,10 @@ const pride = () => ({
   scenes: [
     { id: 'p1', part: 'start', text: 'At the Meryton ball Darcy calls Elizabeth “tolerable, but not handsome enough to tempt me”. She laughs it off and decides she dislikes him.', link: '', out: 'down', who: ['hero', 'darcy', 'bingley', 'jane'] },
     { id: 'p2', line: 'jane', part: 'start', text: 'Bingley falls for Jane. When Jane falls ill at his house, Elizabeth walks three miles through the mud to nurse her.', link: '', out: 'up', who: ['hero', 'jane', 'bingley', 'darcy'] },
-    { id: 'p3', part: 'mid', text: 'Mr. Collins, heir to the Bennet estate, proposes. Elizabeth refuses him, and he marries her friend Charlotte three days later.', link: 'then', out: 'down', who: ['hero', 'collins'] },
+    { id: 'p3', part: 'mid', text: 'Mr. Collins, heir to the Bennet estate, proposes. Elizabeth refuses him, and three days later he proposes to her friend Charlotte, who accepts.', link: 'then', out: 'down', who: ['hero', 'collins'] },
     { id: 'p4', part: 'mid', text: 'The charming officer Wickham tells Elizabeth that Darcy cheated him out of the living his father promised him.', link: 'then', out: 'down', who: ['hero', 'wickham'] },
     { id: 'p5', line: 'jane', part: 'mid', text: 'But Bingley leaves for London without a word, and Jane is heartbroken.', link: 'but', out: 'down', who: ['jane', 'bingley'] },
-    { id: 'p6', also: 'jane', part: 'mid', text: 'But at Hunsford Darcy proposes, insulting her family as he does it. Elizabeth refuses him and accuses him of ruining Jane and Wickham.', link: 'but', out: 'down', who: ['hero', 'darcy', 'catherine'] },
+    { id: 'p6', also: 'jane', part: 'mid', text: 'But at Hunsford Darcy proposes, insulting her family as he does it. Elizabeth refuses him and accuses him of ruining Jane and Wickham.', link: 'but', out: 'down', who: ['hero', 'darcy'] },
     { id: 'p7', part: 'mid', text: 'Therefore Darcy hands her a letter: Wickham tried to elope with his fifteen-year-old sister, and he parted Bingley from Jane believing she didn’t love him. “Till this moment I never knew myself.”', link: 'so', out: 'up', who: ['hero', 'darcy'] },
     { id: 'p8', part: 'mid', text: 'Touring Pemberley with her aunt and uncle, Elizabeth runs into Darcy, who is warm and gracious to the relatives he once sneered at.', link: 'then', out: 'up', who: ['hero', 'darcy'] },
     { id: 'p9', part: 'mid', text: 'But Lydia runs off with Wickham, unmarried: a scandal that will ruin every one of the sisters.', link: 'but', out: 'down', who: ['hero', 'lydia', 'wickham', 'darcy'] },
@@ -1155,7 +1200,12 @@ function renderLines() {
   })
   lanes.forEach((l, k) => {
     const idx = sc.map((s, i) => inLine(s, l.id) ? i : -1).filter(i => i >= 0)
-    svg.append(sv('text', { x: 8, y: Y(k) + 4, class: 'lane-label', style: `fill:${l.color}` }, short(l.name, 13)))
+    // Long thread names wrap onto up to three lines instead of being cut off.
+    const rows = l.name.split(/\s+/).reduce((a, w) => { const t = a.at(-1); if (t && (t + ' ' + w).length <= 14) a[a.length - 1] = t + ' ' + w; else a.push(w); return a }, [])
+    const lines = rows.length > 3 ? [...rows.slice(0, 2), short(rows.slice(2).join(' '), 14)] : rows
+    const label = sv('text', { x: 8, y: Y(k) + 4 - (lines.length - 1) * 8, class: 'lane-label', style: `fill:${l.color}` })
+    lines.forEach((t, j) => label.append(sv('tspan', { x: 8, dy: j ? 16 : 0 }, short(t, 15))))
+    svg.append(label)
     if (idx.length > 1) svg.append(sv('line', { x1: X(idx[0]), y1: Y(k), x2: X(idx.at(-1)), y2: Y(k), 'stroke-linecap': 'round', style: `stroke:${l.color};stroke-width:${l.w}` }))
     for (const i of idx) {
       const s = sc[i], style = `stroke:${l.color};fill:${s.out === 'up' ? l.color : 'var(--surface)'}`
@@ -1193,7 +1243,21 @@ function render() {
 $('#tab-work').onclick = () => setView('work')
 $('#tab-plan').onclick = () => setView('plan')
 $('#tab-lines').onclick = () => setView('lines')
-$('#btn-example').onchange = e => { const make = EXAMPLES[e.target.value]; e.target.value = ''; if (!make) return; S = make(); picked = null; lastScrolled = null; commit(); window.scrollTo(0, 0) }
+// The intro shows until the visitor dismisses it or starts working; "About" brings it back.
+const INTRO_OFF = 'butwhy-intro-off'
+const introOff = () => { try { return localStorage.getItem(INTRO_OFF) === '1' } catch (e) { return false } }
+function showIntro(on) {
+  $('#intro').hidden = !on; $('#btn-about').setAttribute('aria-expanded', String(on))
+  try { on ? localStorage.removeItem(INTRO_OFF) : localStorage.setItem(INTRO_OFF, '1') } catch (e) {}
+}
+const openExample = key => { const make = EXAMPLES[key]; if (!make) return; S = make(); picked = null; lastScrolled = null; showIntro(false); commit(); window.scrollTo(0, 0) }
+$('#btn-example').onchange = e => { const key = e.target.value; e.target.value = ''; openExample(key) }
+$('#btn-about').onclick = () => { showIntro($('#intro').hidden); if (!$('#intro').hidden) window.scrollTo(0, 0) }
+$('#intro-close').onclick = () => showIntro(false)
+$('#intro-look').onclick = () => { showIntro(false); window.scrollTo(0, 0) }
+$('#intro-paste').onclick = () => { showIntro(false); $('#paste').hidden = false; $('#paste-text').focus() }
+document.querySelectorAll('#intro [data-example]').forEach(b => { b.onclick = () => openExample(b.dataset.example) })
+if (!introOff()) showIntro(true)
 $('#btn-paste').onclick = () => { $('#paste').hidden = !$('#paste').hidden; if (!$('#paste').hidden) $('#paste-text').focus() }
 $('#paste-cancel').onclick = () => { $('#paste').hidden = true }
 $('#paste-go').onclick = () => {
