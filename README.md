@@ -1,6 +1,8 @@
 # Butwhy
 
-**Find the holes in your plot.** Butwhy reads your outline and asks one question at a time about its weakest spot.
+**Find the holes in your plot.** Try it: **https://kejid.github.io/butwhy/**
+
+ Butwhy reads your outline and asks one question at a time about its weakest spot.
 
 - Scene 7 just follows scene 6. Did 6 *cause* it, or get in its way?
 - The antagonist disappears for the whole middle.
@@ -34,7 +36,7 @@ The rules are deliberately simple and visible. Butwhy doesn't read your prose; i
 
 ## Run it
 
-Open `index.html` in a browser. That's it.
+Use it online at https://kejid.github.io/butwhy/, or download `index.html` and open it in a browser. That's it.
 
 ## Credits
 
