@@ -32,6 +32,12 @@ The rules are deliberately simple and visible. Butwhy doesn't read your prose; i
 ## Examples
 
 - **The Hound of the Baskervilles** (Arthur Conan Doyle, public domain), marked up scene by scene, including the red herring, the Barrymore subplot and the moment the goal changes.
+- **Pride and Prejudice** (Jane Austen), with the Jane and Bingley subplot, Wickham's lie and Darcy as the obstacle Elizabeth has misjudged.
+- **Romeo and Juliet** (William Shakespeare): the feud as a subplot, and the undelivered letter that decides the ending.
+- **A Christmas Carol** (Charles Dickens): a middle with not a single “but”, and a goal that changes only at the grave.
+- **Frankenstein** (Mary Shelley), with the creature's tale as its own thread and a goal that changes on the glacier.
+
+All four are public domain and marked the way the books are written, not the way the engine would like them.
 - **The Lighthouse**, a short original story with holes left in on purpose.
 
 ## Run it
