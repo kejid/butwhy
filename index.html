@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Butwhy</title>
+<meta name="description" content="Find the holes in your plot. Butwhy reads your outline and asks one question at a time about its weakest spot. No AI, no account, nothing leaves your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Left: the manuscript (premise and the chain of scenes). Right: the editor (one question at a time, cast, secrets). */
+:root{
+  --bg:#eef0f3; --surface:#ffffff; --surface-2:#e4e7ec; --text:#1b1f27; --muted:#5d6573; --border:#d3d8e0;
+  --accent:#2f4fb5; --accent-soft:#e3e9fb; --on-accent:#ffffff;
+  --so:#127068; --so-soft:#dcf1ee; --but:#8a3b9e; --but-soft:#f3e3f7; --then:#a35a08; --then-soft:#fbecd9;
+  --good:#23794a; --bad:#b3261e;
+  --f-story:"Literata",Georgia,"Times New Roman",serif;
+  --f-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13161b; --surface:#1c2027; --surface-2:#262b34; --text:#e7eaf0; --muted:#9aa3b2; --border:#343a45;
+  --accent:#93a8f5; --accent-soft:#25304f; --on-accent:#10131a;
+  --so:#5fd0c3; --so-soft:#163632; --but:#d39be3; --but-soft:#382540; --then:#f0ad5c; --then-soft:#3b2b17;
+  --good:#6fcf97; --bad:#f28b82; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#13161b; --surface:#1c2027; --surface-2:#262b34; --text:#e7eaf0; --muted:#9aa3b2; --border:#343a45;
+  --accent:#93a8f5; --accent-soft:#25304f; --on-accent:#10131a;
+  --so:#5fd0c3; --so-soft:#163632; --but:#d39be3; --but-soft:#382540; --then:#f0ad5c; --then-soft:#3b2b17;
+  --good:#6fcf97; --bad:#f28b82; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--f-ui);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-block:12px;max-width:1240px;margin:0 auto;border-bottom:1px solid var(--border)}
+.brand{font:600 19px var(--f-story)}
+.tagline{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:9px}
+.tabs button{border:0;background:none;padding:5px 14px;border-radius:7px;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.count{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:12px;font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+.ghost{border:1px solid var(--border);background:var(--surface);padding:5px 12px;border-radius:8px}
+.ghost.warn{border-color:var(--bad);color:var(--bad)}
+main{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:32px;max-width:1240px;margin:0 auto;padding-block:24px 64px}
+@media (max-width:920px){main{grid-template-columns:1fr} aside{position:static!important;max-height:none!important}}
+.label{font:600 11px/1.2 var(--f-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+
+.paste{max-width:1240px;margin:16px auto 0;background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:16px 18px}
+.paste h2{margin:0 0 4px;font:600 18px var(--f-story)}
+.paste p{margin:0 0 10px;color:var(--muted);font-size:14px}
+.paste textarea{min-height:180px;font:15px/1.5 var(--f-story)}
+
+.premise{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px 20px}
+.sentence{margin-top:8px;font:20px/1.75 var(--f-story)}
+.blank{border-bottom:2px dashed var(--border);padding:0 1px;outline:none;min-width:3ch}
+.blank:focus{border-bottom-color:var(--accent);background:var(--accent-soft)}
+.blank:empty::before{content:attr(data-ph);color:var(--muted);font-style:italic}
+.blank.need:empty{background:var(--then-soft)}
+
+.part{margin-top:30px}
+.part-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:10px}
+.part-head h2{margin:0;font:600 18px var(--f-story)}
+.part-head .sub{color:var(--muted);font-size:13px}
+.end-badge{margin-left:auto;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:2px 10px;font-size:13px}
+.scene{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px 10px 48px;transition:box-shadow .15s}
+.scene.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.num{position:absolute;left:16px;top:13px;font:600 13px/1.6 var(--f-ui);color:var(--muted);font-variant-numeric:tabular-nums}
+.scene textarea{display:block;width:100%;border:0;background:transparent;resize:none;padding:0;font:17px/1.5 var(--f-story);min-height:26px;overflow:hidden;outline:none}
+.scene textarea::placeholder{color:var(--muted);font-style:italic}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.link{display:flex;align-items:center;gap:8px;padding:6px 0 6px 31px;position:relative}
+.link::before{content:"";position:absolute;left:23px;top:0;bottom:0;border-left:2px solid var(--border)}
+.link .q{font-size:12px;color:var(--then)}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden;background:var(--surface);position:relative}
+.seg button{border:0;background:none;padding:2px 11px;font-size:13px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{color:var(--text);font-weight:600}
+.seg .so[aria-pressed="true"]{background:var(--so-soft);color:var(--so)}
+.seg .but[aria-pressed="true"]{background:var(--but-soft);color:var(--but)}
+.seg .then[aria-pressed="true"]{background:var(--then-soft);color:var(--then)}
+.seg .up[aria-pressed="true"]{color:var(--good)}
+.seg .down[aria-pressed="true"]{color:var(--bad)}
+.chip{border:1px solid var(--border);background:none;border-radius:999px;padding:1px 9px;font-size:13px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
+.chip-input{border:1px solid var(--accent);border-radius:999px;padding:1px 9px;font-size:13px;width:140px;background:var(--surface)}
+.badge{font-size:12px;padding:1px 8px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+.badge.rev{background:var(--but-soft);color:var(--but)}
+.badge.lure{background:var(--then-soft);color:var(--then)}
+.badge.goal-badge{background:var(--so-soft);color:var(--so)}
+.goals{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:8px;font-size:14px}
+.goal{display:flex;align-items:center;gap:8px;width:100%}
+.goal-text{flex:1;min-width:0;border:0;border-bottom:1px dashed var(--border);background:transparent;padding:2px 0;font:16px var(--f-story)}
+.del{margin-left:auto;border:0;background:none;color:var(--muted);font-size:13px;padding:2px 6px;border-radius:6px}
+.del:hover{color:var(--bad)}
+.add{display:block;width:100%;margin-top:8px;border:1px dashed var(--border);background:none;border-radius:10px;padding:7px;color:var(--muted)}
+.add:hover{border-color:var(--accent);color:var(--accent)}
+
+aside{position:sticky;top:70px;align-self:start;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 90px);overflow:auto;padding-bottom:8px}
+.ask{background:var(--surface);border:1.5px solid var(--accent);border-radius:14px;padding:16px}
+.ask h3{margin:6px 0 4px;font:600 18px/1.35 var(--f-story);text-wrap:balance}
+.ask p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.btn{border:0;background:var(--accent);color:var(--on-accent);padding:7px 14px;border-radius:8px;font-weight:600}
+.btn.alt{background:var(--surface-2);color:var(--text)}
+.btn.so{background:var(--so);color:var(--surface)}
+.btn.but{background:var(--but);color:var(--surface)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.idea{display:block;width:100%;text-align:left;border:1px solid var(--border);background:var(--surface-2);border-radius:8px;padding:7px 10px;margin-bottom:6px;font:15px/1.4 var(--f-story)}
+.idea:hover{border-color:var(--accent)}
+.quote{font:14px/1.45 var(--f-story);border-left:3px solid var(--border);padding:2px 10px;margin-bottom:8px}
+.quote b{font:600 12px var(--f-ui);color:var(--muted)}
+.field{width:100%;border:1px solid var(--border);border-radius:8px;padding:6px 9px;background:var(--surface);resize:vertical}
+.skip{border:0;background:none;color:var(--muted);text-decoration:underline;padding:2px 0;font-size:13px}
+details{margin-top:10px;font-size:13px}
+summary{cursor:pointer;color:var(--muted)}
+.qitem{display:block;width:100%;text-align:left;border:0;background:none;padding:4px 6px;border-radius:6px;color:var(--text)}
+.qitem:hover,.qitem.on{background:var(--surface-2)}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.box-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.cast-row{padding:8px 0;border-top:1px solid var(--border)}
+.cast-row .line{display:flex;align-items:center;gap:8px}
+.cast-row input{border:0;background:transparent;padding:1px 0;min-width:0}
+.cast-row .name{font-weight:600;width:90px;flex:none}
+.cast-row .want{flex:1;font-size:14px;color:var(--muted)}
+.dots{display:flex;gap:3px;align-items:center;margin-top:5px}
+.dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--muted);opacity:.5}
+.dot.on{background:var(--text);border-color:var(--text);opacity:1}
+.dots .gap{width:7px}
+.secret{padding:8px 0;border-top:1px solid var(--border)}
+.secret .line{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px;font-size:13px;color:var(--muted)}
+.secret select{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:1px 4px;font-size:13px}
+.secret input{width:100%;border:0;background:transparent;font:15px var(--f-story);padding:0}
+
+.plan{max-width:720px;margin:0 auto;padding-block:28px 64px;font:17px/1.65 var(--f-story)}
+.plan h1{font:600 26px/1.3 var(--f-story);margin:4px 0 8px;text-wrap:balance}
+.plan h2{font:600 19px var(--f-story);margin:28px 0 6px}
+.plan ol{padding-left:28px;margin:0}
+.plan li{margin-bottom:8px}
+.lk{font:600 12px var(--f-ui);text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:5px;margin-right:6px}
+.lk.so{background:var(--so-soft);color:var(--so)} .lk.but{background:var(--but-soft);color:var(--but)} .lk.then{background:var(--then-soft);color:var(--then)}
+.lines-view{max-width:1240px;margin:0 auto;padding-block:24px 64px}
+.lines-view h2{font:600 19px var(--f-story);margin:28px 0 6px}
+.lines-view ul{padding-left:20px;margin:0;font:15px/1.6 var(--f-story)}
+.metro-wrap{overflow-x:auto;margin:12px 0 8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:8px}
+.metro{display:block}
+.metro .band{fill:var(--surface-2);opacity:.7}
+.metro .band-label{fill:var(--muted);font:600 11px var(--f-ui);letter-spacing:.06em;text-transform:uppercase}
+.metro .num-label{fill:var(--muted);font:12px var(--f-ui)}
+.metro .lane-label{font:600 13px var(--f-ui)}
+.metro .transfer{fill:var(--surface);stroke:var(--text);stroke-width:2}
+.metro circle,.metro .station rect{stroke-width:3}
+.metro .theme{stroke-dasharray:3 2}
+.metro .station{cursor:pointer;outline:none}
+.metro .station:hover circle,.metro .station:focus-visible circle,.metro .station:focus-visible rect{stroke-width:5}
+.note{font:13px var(--f-ui);color:var(--muted)}
+.plan-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;font:14px var(--f-ui)}
+.warnline{margin-top:24px;padding:10px 14px;border-radius:10px;background:var(--then-soft);color:var(--then);font:14px var(--f-ui)}
+.prompt{font:15px/1.4 var(--f-story);padding:6px 10px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 8px 8px 0;margin-bottom:6px}
+.prompt b,.chip b,.idea b{font:600 11px var(--f-ui);color:var(--muted);margin-right:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips .chip{color:var(--text);text-align:left}
+.genre{border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:1px 4px;font-size:13px}
+.oracle-res{margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.oracle-word{font:600 30px/1.2 var(--f-story);margin:2px 0 8px}
+.my-list{list-style:none;padding:0;margin:8px 0}
+.my-list li{display:flex;gap:6px;align-items:baseline;padding:5px 0;border-top:1px solid var(--border);font:14px var(--f-story)}
+footer{max-width:1240px;margin:0 auto;padding-block:16px 32px;border-top:1px solid var(--border);color:var(--muted);font-size:13px}
+footer a{color:inherit}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">Butwhy</div>
+  <div class="tagline">find the holes in your plot</div>
+  <div class="tabs" role="group" aria-label="View">
+    <button id="tab-work" type="button">Outline</button>
+    <button id="tab-lines" type="button">Threads</button>
+    <button id="tab-plan" type="button">Plan</button>
+  </div>
+  <div class="spacer"></div>
+  <button id="btn-paste" class="ghost" type="button">Paste outline</button>
+  <select id="btn-example" class="ghost" aria-label="Open an example">
+    <option value="">Examples…</option>
+    <option value="hound">The Hound of the Baskervilles</option>
+    <option value="lighthouse">The Lighthouse</option>
+  </select>
+  <button id="btn-blank" class="ghost" type="button">New story</button>
+</header>
+<section id="paste" class="paste" hidden>
+  <h2>Start from your outline</h2>
+  <p>One scene per line. Numbers and bullets are fine. Lines like “Act 1”, “Act 2”, “Act 3” (or “Beginning”, “Middle”, “End”) split the story into parts; without them, Butwhy guesses. A line that starts with “But” or “Therefore” keeps that link. This replaces the story on screen.</p>
+  <textarea id="paste-text" class="field" aria-label="Your outline" placeholder="1. Ada finds her brother's note at the lighthouse.&#10;2. She asks the harbour master, but he lies to her.&#10;3. ..."></textarea>
+  <div class="row" style="margin-top:10px"><button id="paste-go" class="btn" type="button">Build scenes</button><button id="paste-cancel" class="btn alt" type="button">Cancel</button></div>
+</section>
+<main id="work">
+  <div id="chain"></div>
+  <aside>
+    <div id="ask" class="ask" aria-live="polite"></div>
+    <div id="decks" class="box"></div>
+    <div id="cast" class="box"></div>
+    <div id="secrets" class="box"></div>
+  </aside>
+</main>
+<section id="lines" class="lines-view" hidden></section>
+<section id="plan" class="plan" hidden></section>
+<footer>Butwhy runs entirely in your browser. No AI, no account; your story is saved only on this device. Built on the “but / therefore” rule of storytelling.</footer>
+
+<script>
+const STORE = 'butwhy-story-v1'
+const PARTS = [
+  ['start', 'Beginning', "what breaks the hero's normal life"],
+  ['mid', 'Middle', 'it gets harder: every “but” stronger than the last'],
+  ['end', 'Ending', 'the answer to the stakes'],
+]
+// The hero doesn't have to be a person. Kind decides whether it "wants" or something "must" happen to it; gender picks pronouns.
+const HERO_KINDS = [['person', 'person'], ['group', 'group'], ['place', 'place'], ['thing', 'thing or force']]
+const GENDERS = [['m', 'he'], ['f', 'she'], ['n', 'it'], ['pl', 'they']]
+const FORMS = {
+  m: { pron: 'he', obj: 'him', poss: 'his', self: 'himself' },
+  f: { pron: 'she', obj: 'her', poss: 'her', self: 'herself' },
+  n: { pron: 'it', obj: 'it', poss: 'its', self: 'itself' },
+  pl: { pron: 'they', obj: 'them', poss: 'their', self: 'themselves' },
+}
+const cap = t => t[0].toUpperCase() + t.slice(1)
+function G() {
+  const g = S.gender || 'm', kind = S.kind || 'person'
+  return { ...FORMS[g], kind, agent: kind === 'person' || kind === 'group', v: (sg, pl) => g === 'pl' ? pl : sg }
+}
+function blanks() {
+  const g = G()
+  return g.agent ? [
+    ['who', 'who', 'Who is the story about?', 'The one the reader worries about: a person, a creature or a group.'],
+    ['want', `what ${g.pron} ${g.v('wants', 'want')}`, `What ${g.v('does', 'do')} ${g.pron} want?`, 'Something concrete: to find, to save, to escape, to prove.'],
+    ['but', 'what stands in the way', `What stands in ${g.poss} way?`, "Someone or something that won't go away on its own."],
+    ['stakes', 'what is lost', 'What happens if it fails?', `No stakes, no story. What ${g.v('does', 'do')} ${g.pron} lose?`],
+  ] : [
+    ['who', 'what', 'What is the story about?', 'A place, a thing or a force the reader worries about.'],
+    ['want', 'what must happen', `What must happen to ${g.obj}?`, 'A verb: hold, survive, arrive, open, vanish.'],
+    ['but', 'what stands in the way', 'What stands in the way?', "Someone or something that won't go away on its own."],
+    ['stakes', 'what is lost', 'What happens if not?', 'No stakes, no story. Who loses what?'],
+  ]
+}
+const sentenceGlue = () => { const g = G(); return [` ${g.agent ? g.v('wants', 'want') : 'must'} `, ', but ', '. If not, ', '.'] }
+// {x} is a character name from the story, so a card is about this story and not any story.
+const DECKS = {
+  but: ['But {x} is playing their own game', 'But {x} turns out to be on the other side', 'But {x} wants too much for their help', 'But {x} learns what the hero was hiding', 'But {x} vanishes right when needed', 'But someone else already has what they were after', 'But the price turns out higher than they thought', 'But time runs out sooner', 'But the victory opens up something worse', 'But the hero was wrong about the main thing', 'But the enemy offers a deal', 'But they were being watched all along', 'But the only way through is closed', 'But the truth is worse than the lie', 'But the hero has to choose between two of their own', 'But an old mistake of the hero comes back', 'But help comes from the wrong place, and not for free', 'But the hero loses what they leaned on', 'But the plan works and makes things worse', 'But the rules of this place are against the hero'],
+  so: ['Therefore the hero goes where they were afraid to go', 'Therefore they must ask the enemy for help', 'Therefore the hero changes the plan', "Therefore someone pays for the hero's choice", 'Therefore the secret has to come out', 'Therefore the hero acts first for once, instead of reacting', 'Therefore {x} becomes an ally', 'Therefore {x} gains power over the hero', 'Therefore an old debt comes due', 'Therefore the hero risks what they protected', 'Therefore the hero breaks their own rule', "Therefore they have to act before they're ready"],
+  dark: ['But {x} betrays the hero', 'But everything they fought for is lost', 'But the hero realizes they ruined it themselves', 'But the last ally walks away', 'But the enemy is a step ahead', 'But the worst has already begun: the stakes come true'],
+  hero: ['The hero makes a choice that costs them dearly', 'The hero uses what they learned along the way', 'The hero gives up what they wanted at the start', "The hero turns the enemy's own weapon against them", 'The hero confesses what they hid, and that decides it'],
+  interview: ['What is {x} most afraid of?', 'What would {x} do if no one were watching?', 'Who does {x} lie to, and why?', 'What is {x} ashamed of?', 'What did {x} lose before the story began?', 'What would {x} never give up?', "Who does {x} love that they shouldn't?", "What does {x} believe that isn't true?"],
+  provoke: ['Remove the most important thing from the scene', 'Tell the scene through the eyes of the one in the way', 'Do the opposite', 'Start the scene later, end it sooner', 'Refuse the most obvious move', 'Let someone tell the truth at the worst moment', 'Move the scene somewhere else', 'Let the hero lose where they should have won', 'Write the worst possible version on purpose', 'End the scene on a question, not an answer'],
+}
+// Material cards: who / what they want / what's in the way, by genre; secrets; places.
+const MATERIAL = {"general":{"who":["a debtor paying someone else's debts","an heiress with nothing to inherit","a former ally with a new name","a child who saw everything","someone believed dead","a judge tired of judging","a tax collector keeping a second ledger","the last student of a closed school","a widow who won't believe her husband is dead","a guard who let the wrong one go","a stranger everyone recognizes","a messenger for both sides"],"want":["covering their tracks","asking to be hidden","wants back what was stolen","looking for the last witness","offering a deal to the wrong person","planning someone else's escape","wants to be forgotten","taking revenge for something old","selling someone else's secret","covering for someone's guilt","looking for a buyer","trying to put it all right"],"cost":["there's only time until dawn","the truth will hurt someone innocent","helping looks like betrayal","one witness, and nobody believes them","the party already owes someone","winning costs what matters most","someone is already after them","lying about the main thing","it can't draw attention","an ally ends up on the other side","it can only be won once","everyone will find out"]},"mystery":{"who":["a witness who changed their mind","an investigator out of their jurisdiction","an heir with a perfect alibi","a servant who knows the household's routine","the doctor who signed the report","a neighbor who heard everything","a business partner who stands to gain","a victim who survived","a clerk who altered the papers","a suspect who confessed too quickly","a blackmailer who lost their target","the old detective who closed this case"],"want":["swapping out the evidence","looking for what the killer took","protecting the wrong person","removing the last witness","blackmailing the real culprit","investigating alone and getting in the way","planting a false trail","wants the case closed at any cost","hiding a different, smaller crime","buying back the letters","waiting for the culprit to give themselves away","trying to remember that night"],"cost":["the culprit has power over the investigation","the evidence will spoil by morning","all the statements match too well","the truth clears a bad person","the witness will only talk once","the answer disgraces the client","someone else has already been convicted","the confession can't be used","the next victim has already been chosen","the proof is in an enemy's hands","there's more than one culprit","someone is always one step ahead of the investigation"]},"horror":{"who":["a mother who has stopped blinking","the sole survivor of the expedition","a neighbor who doesn't age","a child with an imaginary friend","a priest who lost their faith yesterday","a caretaker who counts their steps","a doctor who has seen this before","a relative who arrived uninvited","someone speaking in another's voice","an old woman who remembers the old rules","someone who has already written all this down","someone only you can see"],"want":["feeding something in the cellar","trying not to wake anyone","begging you to leave the light on","returning what they took","looking for someone to take their place","boarding the doors from the inside","pretending everything is fine","wants the dead one back","collecting hair and teeth","leading people away one at a time","counting the days until it returns","doesn't want to remember where they came from"],"cost":["it already knows your name","you can only leave without looking back","one of your own is already different","nobody will believe it until it's too late","the light will run out soon","only one can be saved","the more you learn, the closer it gets","your ancestors already signed the deal","neither your mind nor your memory can be trusted","it will take an act of cruelty","the sleepers must not be woken","the door only opens from the inside"]},"scifi":{"who":["a ship's engineer without clearance","a station AI seeking asylum","a third-generation colonist","a clone who found out yesterday","a corporate auditor","a pilot grounded for telling the truth","a scientist who shut down their own project","a smuggler with a spotless record","an envoy of a species everyone fears","a mercenary with someone else's memories","the doctor on the quarantine deck","the last person on watch"],"want":["wiping the flight log","sabotaging a system","smuggling out a sample","searching for a signal heard only once","wants to go home at any cost","selling the coordinates","hiding an infection","woke someone who must stay asleep","falsifying the experiment's data","preparing a mutiny","trying to shut off the surveillance","cutting a deal with the aliens"],"cost":["six hours of air left","the contract forbids helping","communications lag by a full day","the corporation will find out first","the reactor won't take it","you can save the people or the data","the crew doesn't know the whole truth","only the enemy has the parts","the quarantine will never be lifted","the machine is right, and the people disagree","there's only enough fuel for one way","memory can't be verified"]},"secret":["goes by someone else's name","once sided with those they now condemn","is wanted, though not for what people think","receives letters from a dead person","knows where the stolen goods are hidden","is related to the party's enemy","already made a deal they regret","doesn't actually remember their childhood","is guilty of what they seek revenge for","reports every move to someone","is ill and tells no one","has already died once"],"place":["marshes where the old capital stood","mountains whose passes keep moving","a plain without a single tree","a coast of drowned cities","a forest divided by boundary stones","a valley of endless fog","a wasteland left by an old war","islands that pay tribute to the sea","river country of a hundred crossings","a cold plateau of herders","canyons with cities in their walls","a border nobody recognizes","a bridge with no far bank","a statue moved every year","a tower built downward","a tree where treaties are sworn","a crater with a shrine at the bottom","a wall that outlived its country","a gate in the middle of a field","a lighthouse far from any sea","a bell forbidden to ring","a stone circle with a gap","a ship graveyard on dry land","a stairway cut into a mountainside"]}
+const GENRES = [['general', 'General'], ['mystery', 'Mystery'], ['horror', 'Horror'], ['scifi', 'Sci-fi']]
+// Which material fills a premise blank: no people if the hero is a city. The deck's "want" cards read as actions, not goals, so goals get none.
+const matFor = field => {
+  const kind = S.kind || 'person'
+  if (field === 'but') return 'cost'
+  if (field === 'who') return kind === 'person' ? 'who' : kind === 'place' ? 'place' : null
+  return null
+}
+// Your own deck lives apart from the story: "New story" and examples don't touch it.
+const MY_STORE = 'butwhy-cards-v1'
+const MY_KINDS = [['but', '“but” move'], ['so', '“therefore” move'], ['mat', 'material'], ['provoke', 'shift']]
+let MY = (() => { try { return JSON.parse(localStorage.getItem(MY_STORE)) || [] } catch (e) { return [] } })()
+const saveMy = () => { try { localStorage.setItem(MY_STORE, JSON.stringify(MY)) } catch (e) {} }
+const LINKS = [['so', 'therefore'], ['but', 'but'], ['then', 'and then']]
+const OUTS = [['up', 'better'], ['down', 'worse']]
+function endings() {
+  const g = G(), n = heroName(), want = S.premise.want || '…', stakes = S.premise.stakes || '…'
+  return g.agent ? [
+    ['win', 'Wins', `${n} ${g.v('gets', 'get')} what ${g.pron} wanted: ${want}.`],
+    ['lose', 'Loses', `${n} ${g.v('fails', 'fail')}, and ${stakes}.`],
+    ['cost', 'Wins, but pays', `${n} ${g.v('gets', 'get')} it, but ${g.v('loses', 'lose')} …`],
+  ] : [
+    ['win', 'It happens', `${n} ${g.v('manages', 'manage')} to ${want}.`],
+    ['lose', "It doesn't", `${n} ${g.v('fails', 'fail')} to ${want}, and ${stakes}.`],
+    ['cost', 'It happens, at a price', `${n} ${g.v('manages', 'manage')} to ${want}, but at a price: …`],
+  ]
+}
+const endLabel = k => endings().find(e => e[0] === k)[1].toLowerCase()
+
+const $ = s => document.querySelector(s)
+const uid = () => Math.random().toString(36).slice(2, 8)
+const short = (t, n = 70) => { t = (t || '').trim() || '(empty)'; return t.length > n ? t.slice(0, n - 1) + '…' : t }
+const plural = (n, one, many) => n === 1 ? one : many
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag)
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue
+    if (k === 'class') el.className = v
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v)
+    else if (k === 'value') el.value = v
+    else el.setAttribute(k, v === true ? '' : v)
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) el.append(c.nodeType ? c : String(c))
+  return el
+}
+const btn = (label, fn, cls = 'btn') => h('button', { class: cls, type: 'button', onclick: fn }, label)
+const row = (...k) => h('div', { class: 'row' }, ...k)
+
+const blank = () => ({ kind: 'person', gender: 'm', premise: { who: '', want: '', but: '', stakes: '' }, cast: [{ id: 'hero', name: '', want: '', hero: true }], scenes: [], secrets: [], ending: '', cost: '', driver: '', proxy: '', glue: '', skipped: [], view: 'work' })
+const lighthouse = () => ({
+  kind: 'person', gender: 'f', proxy: '', glue: '',
+  premise: { who: 'Ada, the lighthouse keeper', want: 'to bring her brother back from the smugglers', but: "her brother doesn't want to come back, and the harbour master protects the smugglers", stakes: 'on the night of the storm the light goes out and a ship full of settlers breaks on the rocks' },
+  cast: [
+    { id: 'hero', name: '', want: '', hero: true },
+    { id: 'tim', name: 'Tim', want: "to pay off their father's debt" },
+    { id: 'korvin', name: 'Korvin', want: '' },
+    { id: 'mira', name: 'Mira', want: 'to run one last cargo before the storm' },
+  ],
+  scenes: [
+    { id: 's1', part: 'start', text: "Ada finds her brother's note at the lighthouse: “Don't look for me. I have to do this.”", link: '', out: 'down', who: ['hero', 'tim'] },
+    { id: 's2', part: 'mid', text: 'Ada goes to the harbour master, but Korvin swears there are no smugglers in town.', link: 'but', out: 'down', who: ['hero', 'korvin'] },
+    { id: 's3', part: 'mid', text: 'At night Ada watches the docks and spots Tim among the porters.', link: 'then', out: '', who: ['hero', 'tim'] },
+    { id: 's4', part: 'mid', text: 'Therefore she goes to Mira and offers a deal: her brother for her silence.', link: 'so', out: 'up', who: ['hero', 'mira'] },
+    { id: 's5', part: 'end', text: 'The storm. Ada has to choose: light the lamp, or pull her brother off the departing ship.', link: '', out: '', who: ['hero', 'tim'] },
+  ],
+  secrets: [
+    { id: 'x1', text: 'Korvin is in business with Mira', hint: '', reveal: 's5' },
+    { id: 'x2', text: "Their father didn't drown; he ran from his debts", hint: '', reveal: '' },
+  ],
+  ending: '', cost: '', driver: '', skipped: [], view: 'work',
+})
+// A known story, marked honestly: links and outcomes as in the book, not as the engine would like them.
+const hound = () => ({
+  kind: 'person', gender: 'm', proxy: '', glue: '',
+  premise: { who: 'Sherlock Holmes, consulting detective', want: 'to find out who is behind the curse of the Baskervilles', but: 'the killer hides behind an old legend and a respectable face', stakes: 'Sir Henry, the last heir, dies on the moor like his uncle' },
+  cast: [
+    { id: 'hero', name: '', want: '', hero: true },
+    { id: 'watson', name: 'Watson', want: 'to prove he can handle the case alone' },
+    { id: 'henry', name: 'Sir Henry', want: 'to claim his inheritance and live at Baskerville Hall' },
+    { id: 'mortimer', name: 'Mortimer', want: 'to keep Sir Henry alive' },
+    { id: 'barrymore', name: 'Barrymore', want: "to protect his wife's brother" },
+    { id: 'selden', name: 'Selden', want: 'to escape the moor' },
+    { id: 'stapleton', name: 'Stapleton', want: 'to inherit the Baskerville fortune' },
+    { id: 'beryl', name: 'Beryl', want: 'to warn Sir Henry without betraying her husband' },
+    { id: 'laura', name: 'Laura Lyons', want: 'to marry the man who promised her a divorce' },
+  ],
+  scenes: [
+    { id: 'b1', part: 'start', text: 'Dr. Mortimer brings Holmes the legend of a demon hound and the death of Sir Charles, found on the moor with a face twisted by terror.', link: '', out: 'down', who: ['hero', 'watson', 'mortimer'] },
+    { id: 'b2', part: 'start', text: 'Therefore Holmes meets the heir, Sir Henry, in London: someone sends him a warning and steals one of his boots.', link: 'so', out: 'down', who: ['hero', 'watson', 'henry', 'mortimer'] },
+    { id: 'b3', part: 'mid', text: "Therefore Holmes sends Watson to Baskerville Hall to guard Sir Henry, saying he can't leave London himself.", link: 'so', out: 'down', who: ['hero', 'watson', 'henry'] },
+    { id: 'b4', part: 'mid', text: 'But on the moor Watson meets Stapleton, a friendly naturalist, and his sister, who whispers to him to go back to London.', link: 'but', out: 'down', who: ['watson', 'stapleton', 'beryl'] },
+    { id: 'b5', line: 'barry', part: 'mid', text: 'At night Watson hears a woman crying and catches the butler Barrymore signalling with a candle at the window.', link: 'then', out: 'down', who: ['watson', 'barrymore'] },
+    { id: 'b6', line: 'barry', part: 'mid', text: "Therefore Watson and Sir Henry chase the signal and find the escaped convict Selden; Mrs. Barrymore confesses he is her brother.", link: 'so', out: 'up', who: ['watson', 'henry', 'barrymore', 'selden'] },
+    { id: 'b7', part: 'mid', text: "But Sir Henry falls for Stapleton's sister, and Stapleton flies into a rage.", link: 'but', out: 'down', who: ['henry', 'stapleton', 'beryl'] },
+    { id: 'b8', part: 'mid', text: 'Therefore Watson tracks down Laura Lyons, who admits Sir Charles was waiting on the moor to meet her the night he died.', link: 'so', out: 'up', who: ['watson', 'laura'] },
+    { id: 'b9', part: 'mid', text: 'But the stranger hiding in a stone hut on the moor turns out to be Holmes, who has been there all along.', link: 'but', out: 'up', who: ['hero', 'watson'] },
+    { id: 'b10', also: 'barry', part: 'mid', text: "But that night a hound's howl ends in a scream: Selden lies dead, wearing Sir Henry's old clothes. Holmes names Stapleton.", link: 'but', out: 'down', who: ['hero', 'watson', 'selden', 'stapleton'] },
+    { id: 'b11', part: 'end', text: 'Therefore Holmes uses Sir Henry as bait: he walks home alone across the moor after dinner with the Stapletons.', link: 'so', out: 'down', who: ['hero', 'watson', 'henry', 'stapleton'] },
+    { id: 'b12', part: 'end', text: 'But the fog rolls in; a huge hound with glowing jaws brings Sir Henry down before Holmes shoots it. Stapleton flees into the bog and is never found.', link: 'but', out: 'up', who: ['hero', 'watson', 'henry', 'stapleton'] },
+    { id: 'b13', kind: 'after', part: 'end', text: 'Back in London, Holmes explains: Stapleton was a lost Baskerville heir, and Beryl was his wife, not his sister.', link: 'then', out: 'up', who: ['hero', 'watson'] },
+  ],
+  secrets: [
+    { id: 'z1', text: 'Stapleton is the killer', hint: 'b4', reveal: 'b10', lure: 'b5', lureText: 'the butler Barrymore is behind it' },
+    { id: 'z2', text: "Beryl is Stapleton's wife, not his sister", hint: 'b7', reveal: 'b13', lure: 'b4', lureText: 'she is simply his sister' },
+    { id: 'z3', text: 'The stranger on the moor is Holmes', hint: 'b3', reveal: 'b9' },
+    { id: 'z4', text: 'Sir Charles was lured onto the moor by a letter', hint: 'b1', reveal: 'b8' },
+  ],
+  lines: [{ id: 'barry', name: 'The Barrymores' }], foe: ['stapleton'],
+  goals: [{ scene: 'b10', text: 'to catch Stapleton in the act before he strikes again' }],
+  ending: 'cost', cost: "Sir Henry's nerves and his love for Beryl; Selden's life", driver: '', skipped: [], view: 'work',
+})
+const EXAMPLES = { hound, lighthouse }
+function load() { try { const v = JSON.parse(localStorage.getItem(STORE)); return v && v.premise ? v : null } catch (e) { return null } }
+function save() { try { localStorage.setItem(STORE, JSON.stringify(S)) } catch (e) {} }
+let S = load() || hound()
+let picked = null, listOpen = false, lastScrolled = null, blankArmed = null, deckTab = ''
+
+const ordered = () => PARTS.flatMap(([p]) => S.scenes.filter(s => s.part === p))
+const count = p => S.scenes.filter(s => s.part === p).length
+const heroName = () => (S.premise.who.split(',')[0] || '').trim() || 'The hero'
+const castName = c => c.hero ? heroName() : (c.name || 'no name')
+const castOf = id => S.cast.find(c => c.id === id)
+const sceneNo = id => ordered().findIndex(s => s.id === id) + 1
+// A scene links to the previous scene of its own thread; theme scenes and the epilogue don't continue the chain.
+function prevOf(s, sc = ordered()) {
+  for (let j = sc.indexOf(s) - 1; j >= 0; j--) if ((sc[j].line || '') === (s.line || '') && !sc[j].kind) return sc[j]
+  return null
+}
+const lineName = id => (S.lines || []).find(l => l.id === id)?.name || ''
+// A scene can sit where two threads meet: its own thread plus `also` ('_main' is the main plot).
+const inLine = (s, id) => (s.line || '') === id || s.also === (id || '_main')
+function commit() { save(); render() }
+
+function addScene({ part, text = '', link = '', out = '', after = null, line = '' }) {
+  const s = { id: uid(), part, text, link, out, line, who: ['hero'] }
+  const i = after ? S.scenes.findIndex(x => x.id === after) : S.scenes.map(x => x.part).lastIndexOf(part)
+  if (after && i >= 0) s.part = S.scenes[i].part
+  if (i < 0) S.scenes.push(s); else S.scenes.splice(i + 1, 0, s)
+  picked = null
+  commit()
+  const ta = document.querySelector(`[data-scene="${s.id}"] textarea`)
+  if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); ta.closest('.scene').scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
+}
+function delScene(id) {
+  S.scenes = S.scenes.filter(s => s.id !== id)
+  S.secrets.forEach(x => { if (x.hint === id) x.hint = ''; if (x.reveal === id) x.reveal = ''; if (x.lure === id) x.lure = '' })
+  commit()
+}
+
+// Outline → scenes. One line, one scene; "Act 1/2/3" or "Beginning/Middle/End" headings pick the part.
+function parseOutline(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  // A heading is the whole line: "Act 2", "## Middle", "Act III: the storm". "Ending the war, Ada..." is a scene.
+  const partOf = l => {
+    const m = l.length <= 60 && l.match(/^(?:#+\s*)?(?:act\s*(1|i|one|2|ii|two|3|iii|three)|(beginning|setup|middle|ending|end|climax|resolution))\s*(?:[:.\-–—].*)?$/i)
+    if (!m) return null
+    const w = (m[1] || m[2]).toLowerCase()
+    return ['1', 'i', 'one', 'beginning', 'setup'].includes(w) ? 'start' : ['2', 'ii', 'two', 'middle'].includes(w) ? 'mid' : 'end'
+  }
+  let part = null, sawHeading = false
+  const scenes = []
+  for (const raw of lines) {
+    const p = partOf(raw)
+    if (p) { part = p; sawHeading = true; continue }
+    const t = raw.replace(/^(\d+[.)]|[-*•–])\s*/, '').trim()
+    if (!t) continue
+    const link = /^but\b/i.test(t) ? 'but' : /^(therefore|so)\b/i.test(t) ? 'so' : /^(and then|then)\b/i.test(t) ? 'then' : ''
+    scenes.push({ id: uid(), part: part || 'mid', text: t, link, out: '', who: ['hero'] })
+  }
+  // No headings: roughly the first fifth is the beginning and the last fifth the ending.
+  if (!sawHeading && scenes.length >= 3) {
+    const k = Math.max(1, Math.round(scenes.length / 5))
+    scenes.forEach((s, i) => { s.part = i < k ? 'start' : i >= scenes.length - k ? 'end' : 'mid' })
+  }
+  return scenes
+}
+
+// Engine questions, most important first. Keys are stable so "Skip" doesn't bring a question back.
+function issues() {
+  const L = [], sc = ordered(), p = S.premise
+  const g = G()
+  for (const [k, , q, hint] of blanks()) if (!p[k].trim()) L.push({ key: 'p-' + k, kind: 'premise', field: k, q, h: hint })
+  if (g.kind === 'group' && !(S.glue || '').trim()) L.push({ key: 'glue', kind: 'glue', q: 'What holds them together?', h: 'A group with nothing in common lasts until the first trouble. And who among them pulls the other way?' })
+  if (!count('start')) L.push({ key: 'start', kind: 'add', part: 'start', q: 'Where does it all begin?', h: "What breaks the hero's normal life and pushes them out the door?" })
+  if (!S.ending) L.push({ key: 'ending', kind: 'ending', q: 'How does it end?', h: 'The ending answers the stakes. Knowing it makes the middle easier to build.' })
+  else if (!count('end')) L.push({ key: 'endscene', kind: 'add', part: 'end', q: "The ending is chosen, but there's no scene for it.", h: 'How exactly does it happen?' })
+  if (S.ending === 'cost' && !(S.cost || '').trim()) L.push({ key: 'cost', kind: 'cost', q: g.agent ? `What ${g.v('does', 'do')} ${g.pron} pay?` : 'At what price?', h: 'A price is real only if it was something they valued at the start.' })
+  sc.forEach((s, i) => { if (!s.text.trim()) L.push({ key: 'empty-' + s.id, kind: 'empty', scene: s.id, q: `Scene ${i + 1} is empty.`, h: 'One line: what happens in it? Or delete it.' }) })
+  sc.forEach((s, i) => {
+    const prev = prevOf(s, sc)
+    if (prev && !s.kind && s.text.trim() && (!s.link || s.link === 'then')) L.push({ key: 'link-' + s.id, kind: 'link', scene: s.id, q: `Scene ${i + 1} just follows scene ${sc.indexOf(prev) + 1}.`, h: 'Readers skim “and then”. Did the previous scene cause this one (therefore) or get in its way (but)? If it is a theme scene or an epilogue, mark it so.' })
+  })
+  sc.forEach((s, i) => { if (s.text.trim() && !s.out && s.kind !== 'after') L.push({ key: 'out-' + s.id, kind: 'out', scene: s.id, q: `What does scene ${i + 1} change?`, h: 'After every scene things should be better or worse for the hero. If nothing changed, the scene can go.' }) })
+  const mid = count('mid')
+  if (mid < 3) L.push({ key: 'mid' + mid, kind: 'grow', q: mid ? 'The middle is short. What else goes wrong?' : 'There is no middle. What goes wrong along the way?', h: 'The middle is a chain of obstacles, each one stronger than the last.' })
+  else if (!sc.some((s, i) => i && s.part === 'mid' && s.link === 'but')) L.push({ key: 'nobut', kind: 'grow', q: 'There is not a single “but” in the middle.', h: 'If everything works on the first try, the middle sags. What falls through?' })
+  for (let i = 2; i < sc.length; i++) {
+    const [a, b, c] = [sc[i - 2].out, sc[i - 1].out, sc[i].out]
+    if (c && a === b && b === c) {
+      const down = c === 'down'
+      // Inserting between the second and third scene breaks the streak; after the third it would stay.
+      L.push({ key: 'mono-' + sc[i].id, kind: 'mono', scene: sc[i].id, after: sc[i - 1].id, deck: down ? 'so' : 'but', q: down ? `Scenes ${i - 1}–${i + 1}: worse and worse.` : `Scenes ${i - 1}–${i + 1}: everything goes smoothly.`, h: down ? 'Nonstop falling wears readers out. Give the hero a breather or a false victory.' : 'No setbacks, no tension. Let something fall apart.' })
+      break
+    }
+  }
+  const mids = sc.filter(s => s.part === 'mid'), fin = sc.filter(s => s.part === 'end' && s.kind !== 'after').at(-1), lastMid = mids.at(-1)
+  if (fin && mids.length >= 2 && lastMid.out === 'up') L.push({ key: 'dark-' + lastMid.id, kind: 'dark', scene: lastMid.id, q: 'There is no darkest moment before the ending.', h: 'An ending hits harder when, just before it, all seems lost. What breaks before the end?' })
+  if (fin && fin.text.trim()) {
+    if (g.agent && !S.driver) L.push({ key: 'driver', kind: 'driver', scene: fin.id, q: 'Who decides the outcome?', h: 'If the ending is decided for the hero (luck, a rescuer, a miracle), readers feel cheated.' })
+    else if (g.agent && S.driver === 'world') L.push({ key: 'passive', kind: 'passive', scene: fin.id, q: 'The outcome is decided for the hero.', h: `Let ${g.obj} do the thing that decides it. Add the act or rewrite the ending.` })
+    const clash = S.ending && fin.out && ((S.ending === 'win' && fin.out === 'down') || (S.ending === 'lose' && fin.out === 'up'))
+    if (clash) L.push({ key: `clash-${fin.id}-${S.ending}-${fin.out}`, kind: 'clash', scene: fin.id, q: 'The ending argues with the last scene.', h: `You chose “${endLabel(S.ending)}”, but after the last scene things got ${fin.out === 'up' ? 'better' : 'worse'} for the hero.` })
+  }
+  // A place or a thing can't act: the reader roots for it through someone.
+  const px = S.proxy && castOf(S.proxy)
+  if (!g.agent && sc.length >= 2 && !px) L.push({ key: 'proxy', kind: 'proxy', q: `Who acts for ${g.obj}?`, h: `${heroName()} can't act on ${g.poss} own. Someone has to carry the reader's hopes: a keeper, a victim, or the one who threatens ${g.obj}.` })
+  if (!g.agent && px && fin && !fin.who.includes(px.id)) L.push({ key: 'proxyend-' + fin.id, kind: 'proxyend', scene: fin.id, q: `${px.name} is missing from the climax.`, h: `${px.name} acts for the hero but takes no part in the ending. The outcome is decided without them.` })
+  S.cast.forEach(c => { if (!c.hero && c.name.trim() && !c.want.trim()) L.push({ key: 'want-' + c.id, kind: 'castwant', cast: c.id, q: `What does ${c.name} want?`, h: 'Everyone in a story has their own goal. Without one, a character is furniture.' }) })
+  S.cast.forEach(c => {
+    const first = !c.hero && sc.find(s => s.who.includes(c.id))
+    if (first && first.part === 'end' && sc.some(s => s.part !== 'end')) L.push({ key: 'late-' + c.id, kind: 'late', cast: c.id, q: `${c.name} first appears in the ending.`, h: 'Whoever shapes the ending should be known to the reader earlier. Where can they show up?' })
+  })
+  S.cast.forEach(c => {
+    if (c.hero || mids.length < 2) return
+    // Vanished means they were there at the start. First appearing in the ending is a separate question.
+    const seen = sc.some(s => s.part === 'start' && s.who.includes(c.id))
+    if (seen && !mids.some(s => s.who.includes(c.id))) L.push({ key: 'gone-' + c.id, kind: 'gone', cast: c.id, q: `${c.name} vanishes in the middle.`, h: 'What are they doing while the hero is busy? Mark a scene where they help or get in the way.' })
+  })
+  // The hero's goal can change: a vague "find a home" turns into a concrete "save the stone".
+  const goals = (S.goals || []).filter(x => sc.some(s => s.id === x.scene))
+  if (g.agent && !goals.length && !S.goalFixed && mids.length >= 5) L.push({ key: 'goal', kind: 'goal', q: 'Does the goal never change?', h: `Often in the middle the hero realizes what ${g.pron} really ${g.v('wants', 'want')}, or a vague wish becomes a concrete task. If it changes, to what and from which scene?` })
+  goals.forEach(x => { if (sc.find(s => s.id === x.scene).part === 'end') L.push({ key: 'goallate-' + x.scene, kind: 'goalmove', goal: x.scene, scene: x.scene, q: 'The goal changes only in the ending.', h: 'A new goal needs a middle to be chased in. Move the change earlier.' }) })
+  if (goals.length && fin && fin.text.trim() && !S.goalAnswered) L.push({ key: 'goalend', kind: 'goalend', scene: fin.id, q: 'Does the ending answer both goals?', h: `First: “${p.want || '…'}”. Then: “${goals.at(-1).text}”. If the first one is simply forgotten, readers will notice.` })
+  if (!S.secrets.length && sc.length >= 4) L.push({ key: 'nosecret', kind: 'addsecret', q: 'Is no one hiding anything?', h: 'A secret pulls the reader forward. Who knows something and keeps quiet?' })
+  // The antagonist embodies the "but" of the premise. The middle stands on their pressure.
+  const foe = (S.foe || []).filter(id => castOf(id)), foeIn = s => s.who.some(id => foe.includes(id))
+  const foeNames = foe.map(id => castOf(id).name).join(', ')
+  if (!foe.length && !S.foeNone && sc.length >= 3 && S.cast.some(c => !c.hero && c.name.trim())) L.push({ key: 'foe', kind: 'foe', q: 'Who is the antagonist?', h: `In the premise, what stands in the way is: “${p.but || '…'}”. Which character embodies it? If it's a faceless force (time, illness, a storm), mark that.` })
+  if (foe.length && mids.length >= 2) {
+    const first = mids.findIndex(foeIn)
+    if (first < 0) L.push({ key: 'foemid', kind: 'foeadd', pool: 'mid', q: 'The antagonist puts no pressure on the middle.', h: `${foeNames} appears in no middle scene. Without that pressure, the obstacles look random.` })
+    else if (first > mids.length / 2) L.push({ key: 'foelate-' + mids[first].id, kind: 'foeadd', pool: 'early', scene: mids[first].id, q: `The antagonist first presses only in scene ${sceneNo(mids[first].id)}.`, h: 'Until then the middle stands on other obstacles. Show their shadow earlier: servants, rumours, traces.' })
+  }
+  if (foe.length && fin && fin.text.trim() && !foeIn(fin)) L.push({ key: 'foeend-' + fin.id, kind: 'foeadd', pool: 'fin', scene: fin.id, q: 'The antagonist is missing from the climax.', h: `${foeNames} takes no part in the main scene of the ending. Then who is defeated?` })
+  // Subplots: each has to arrive somewhere, and one scene is not yet a thread.
+  for (const ln of S.lines || []) {
+    const ls = sc.filter(s => inLine(s, ln.id))
+    if (ls.length === 1) L.push({ key: 'line1-' + ln.id, kind: 'line1', scene: ls[0].id, line: ln.id, q: `Thread “${ln.name}” is a single scene.`, h: 'A thread lives when it has a start, a turn and an end. Add scenes or move this one back to the main plot.' })
+    else if (ls.length > 1 && !ls.some(s => s.line !== ln.id || s.also)) L.push({ key: 'cross-' + ln.id, kind: 'cross', line: ln.id, q: `Thread “${ln.name}” never meets the others.`, h: 'A subplot that affects nothing can be cut without loss. In which main-plot scene does it make itself felt?' })
+    else if (ls.length > 1 && !ln.done) L.push({ key: 'lineend-' + ln.id, kind: 'lineend', scene: ls.at(-1).id, line: ln.id, q: `How does thread “${ln.name}” end?`, h: `Its last scene is ${sceneNo(ls.at(-1).id)}. A subplot should resolve or change the main plot, not just stop.` })
+  }
+  // Theme scenes and the epilogue skip the but/therefore chain, but they have rules of their own.
+  sc.forEach((s, i) => {
+    if (i && s.kind === 'theme' && sc[i - 1].kind === 'theme') L.push({ key: 'theme2-' + s.id, kind: 'focus2', scene: s.id, q: `Scenes ${i}–${i + 1}: theme twice in a row, plot stands still.`, h: 'One theme scene deepens a story; two in a row stop it. Tie one of them to the plot.' })
+    if (s.kind === 'after' && sc.slice(i + 1).some(y => y.kind !== 'after')) L.push({ key: 'afterpos-' + s.id, kind: 'focus2', scene: s.id, q: `The epilogue in scene ${i + 1} is not at the end.`, h: 'An epilogue comes after the climax, once everything is decided. Move it to the end or mark it as a plot scene.' })
+  })
+  // Red herring: the reader believes another version. It's fair only if the truth flickered somewhere too.
+  let lureAsked = false
+  S.secrets.filter(x => x.text.trim()).forEach(x => {
+    const ri = sc.findIndex(s => s.id === x.reveal), hi = sc.findIndex(s => s.id === x.hint), li = sc.findIndex(s => s.id === x.lure)
+    if (ri < 0) { L.push({ key: 'rev-' + x.id, kind: 'reveal', secret: x.id, q: `Where is “${x.text}” revealed?`, h: 'A secret that never comes out goes unnoticed.' }); return }
+    if (li >= ri) L.push({ key: 'lurelate-' + x.id, kind: 'lure', secret: x.id, scene: x.lure, q: 'The red herring comes after the reveal.', h: `Readers are misled in scene ${li + 1}, but the truth (“${x.text}”) came out already in scene ${ri + 1}. Move the herring earlier.` })
+    if (hi < 0 || hi >= ri) L.push(li >= 0 && li < ri
+      ? { key: 'fair-' + x.id, kind: 'hint', secret: x.id, scene: x.reveal, q: 'A red herring with no fair clue.', h: `Readers think “${x.lureText || '…'}”, and that's fine. But the truth (“${x.text}”) has to flicker somewhere, or the reveal feels like cheating. Where was it visible but missed?` }
+      : { key: 'hint-' + x.id, kind: 'hint', secret: x.id, scene: x.reveal, q: `“${x.text}” comes out of nowhere.`, h: `It is revealed in scene ${ri + 1}, but nothing hints at it before. Where does the reader first get suspicious?` })
+    else if (li < 0 && sc[ri].part === 'end' && !lureAsked) {
+      lureAsked = true
+      L.push({ key: 'lure-' + x.id, kind: 'lure', secret: x.id, q: `What does the reader believe before learning “${x.text}”?`, h: 'A strong reveal overturns what readers believed. Which version looks true, and in which scene are they convinced of it?' })
+    }
+  })
+  return L.filter(x => !S.skipped.includes(x.key))
+}
+
+// Cards: your own first, then the built-in ones. {x} is a character name from the story.
+// The deck offset is remembered per question so cards don't reshuffle while you type.
+const offs = {}
+const castNames = only => { const n = only ? [only] : S.cast.filter(c => !c.hero && c.name.trim()).map(c => c.name.trim()); return n.length ? n : ['a stranger'] }
+const deckList = deck => [...MY.filter(c => c.deck === deck).map(c => ({ t: c.text, mine: true })), ...(DECKS[deck] || []).map(t => ({ t }))]
+const cardText = c => c.mine ? [h('b', {}, 'mine'), c.t] : c.t
+function cardBlock(key, label, getList, n, renderCard, name, cls = '') {
+  const box = h('div', { class: cls }), nm = castNames(name)
+  // Your cards sit at the top of the list, so a deck with them starts at zero.
+  if (offs[key] == null) offs[key] = getList().some(c => c.mine) ? 0 : Math.floor(Math.random() * 40)
+  const fill = () => {
+    box.innerHTML = ''
+    const list = getList()
+    for (let i = 0; i < Math.min(n, list.length); i++) {
+      const c = list[(offs[key] + i) % list.length]
+      box.append(renderCard({ ...c, t: c.t.replace('{x}', nm[(offs[key] + i) % nm.length]) }))
+    }
+  }
+  fill()
+  return h('div', {}, label ? h('div', { class: 'label', style: 'margin:10px 0 6px' }, label) : null, box, btn('More', () => { offs[key] += n; fill() }, 'skip'))
+}
+function ideas(deck, onPick, key = deck) {
+  const own = h('textarea', { class: 'field', rows: 2, id: 'own-' + deck, placeholder: 'Or your own, in one line' })
+  return h('div', {},
+    cardBlock(key, 'Options: click one to make it a scene', () => deckList(deck), 3, c => h('button', { class: 'idea', type: 'button', onclick: () => onPick(c.t + ': ') }, cardText(c))),
+    h('div', { style: 'margin-top:8px' }, own),
+    h('div', { style: 'margin-top:8px' }, btn('Add scene', () => own.value.trim() && onPick(own.value.trim()))))
+}
+const prompts = (deck, key, name) => cardBlock(key, 'Think about', () => deckList(deck), 3, c => h('div', { class: 'prompt' }, cardText(c)), name)
+function material(type, inp, key) {
+  const pool = () => [...MY.filter(c => c.deck === 'mat').map(c => ({ t: c.text, mine: true })),
+    ...(type === 'secret' || type === 'place' ? MATERIAL[type] : MATERIAL[S.genre || 'general'][type]).map(t => ({ t }))]
+  const make = () => cardBlock(key, null, pool, 4, c => h('button', { class: 'chip', type: 'button', onclick: () => { inp.value = inp.value.trim() ? inp.value.trim() + ', ' + c.t : c.t; inp.focus() } }, cardText(c)), null, 'chips')
+  let block = make()
+  let sel = null
+  if (type !== 'secret' && type !== 'place') {
+    sel = h('select', { 'aria-label': 'Deck genre', class: 'genre' }, GENRES.map(([k, l]) => h('option', { value: k }, l)))
+    sel.value = S.genre || 'general'
+    sel.addEventListener('change', () => { S.genre = sel.value; save(); const nb = make(); block.replaceWith(nb); block = nb })
+  }
+  return h('div', {}, h('div', { class: 'row', style: 'margin:10px 0 6px' }, h('span', { class: 'label' }, 'From the deck'), sel), block)
+}
+const sceneButtons = (list, onPick) => list.map(s => h('button', { class: 'idea', type: 'button', onclick: () => onPick(s) }, h('b', {}, `Scene ${sceneNo(s.id)}`), short(s.text, 60)))
+function inputAnswer(value, placeholder, onOk, extra) {
+  const inp = h('input', { class: 'field', value, placeholder, id: 'answer' })
+  const ok = () => inp.value.trim() && onOk(inp.value.trim())
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok() })
+  return h('div', {}, inp, h('div', { style: 'margin-top:8px' }, btn('Done', ok)), extra ? extra(inp) : null)
+}
+
+function controls(it) {
+  const sc = ordered()
+  const s = it.scene && sc.find(x => x.id === it.scene)
+  const x = it.secret && S.secrets.find(y => y.id === it.secret)
+  switch (it.kind) {
+    case 'premise': { const m = matFor(it.field); return inputAnswer(S.premise[it.field], '', v => { S.premise[it.field] = v; commit() }, m && (inp => material(m, inp, it.key + m))) }
+    case 'glue': return inputAnswer('', 'a common enemy, a debt, an oath, blood', v => { S.glue = v; commit() })
+    case 'proxy': {
+      const others = S.cast.filter(c => !c.hero && c.name.trim())
+      return h('div', {}, others.map(c => h('button', { class: 'idea', type: 'button', onclick: () => { S.proxy = c.id; commit() } }, c.name, c.want ? h('span', { class: 'muted' }, ' — ' + short(c.want, 40)) : null)),
+        inputAnswer('', 'Or a new character', v => { const c = { id: uid(), name: v, want: '' }; S.cast.push(c); S.proxy = c.id; commit() }))
+    }
+    case 'proxyend': return row(btn('Add to the ending', () => { s.who.push(S.proxy); commit() }))
+    case 'add': {
+      const ta = h('textarea', { class: 'field', rows: 2, id: 'answer', placeholder: 'One line: what happens' })
+      return h('div', {}, ta, h('div', { style: 'margin-top:8px' }, btn('Add scene', () => ta.value.trim() && addScene({ part: it.part, text: ta.value.trim() }))))
+    }
+    case 'ending': return h('div', {}, endings().map(([k, label, text]) => h('button', {
+      class: 'idea', type: 'button',
+      onclick: () => { S.ending = k; if (!count('end')) addScene({ part: 'end', text, link: 'but' }); else commit() },
+    }, h('b', {}, label), text)))
+    case 'empty': return h('div', {}, row(btn('Write it', () => { const ta = document.querySelector(`[data-scene="${s.id}"] textarea`); ta && ta.focus() }), btn('Delete scene', () => delScene(s.id), 'btn alt')), prompts('provoke', it.key))
+    case 'link': {
+      const prev = prevOf(s, sc)
+      return h('div', {},
+        h('div', { class: 'quote' }, h('b', {}, `${sc.indexOf(prev) + 1}. `), short(prev.text, 110)),
+        h('div', { class: 'quote' }, h('b', {}, `${sc.indexOf(s) + 1}. `), short(s.text, 110)),
+        row(btn('Therefore', () => { s.link = 'so'; commit() }, 'btn so'), btn('But', () => { s.link = 'but'; commit() }, 'btn but')),
+        h('div', { class: 'row', style: 'margin-top:8px' }, btn("It's a theme scene", () => { s.kind = 'theme'; commit() }, 'btn alt'),
+          s.part === 'end' ? btn("It's the epilogue", () => { s.kind = 'after'; commit() }, 'btn alt') : null))
+    }
+    case 'foe': return h('div', {},
+      S.cast.filter(c => !c.hero && c.name.trim()).map(c => h('button', { class: 'idea', type: 'button', onclick: () => { S.foe = [...(S.foe || []), c.id]; commit() } }, c.name, c.want ? h('span', { class: 'muted' }, ' — ' + short(c.want, 40)) : null)),
+      btn('A faceless force', () => { S.foeNone = true; commit() }, 'btn alt'))
+    case 'foeadd': {
+      const foe = (S.foe || []).filter(id => castOf(id)), mids = sc.filter(y => y.part === 'mid')
+      const add = y => { y.who.push(foe[0]); commit() }
+      if (it.pool === 'fin') return row(btn(`Add ${castOf(foe[0]).name}`, () => add(s)))
+      const pool = it.pool === 'early' ? mids.slice(0, mids.findIndex(y => y.id === it.scene)) : mids
+      return h('div', {}, h('div', { class: 'label', style: 'margin-bottom:6px' }, `Where does ${castOf(foe[0]).name} or their shadow show up?`), sceneButtons(pool, add))
+    }
+    case 'cross': return h('div', {}, h('div', { class: 'label', style: 'margin-bottom:6px' }, 'Main-plot scene where they meet'),
+      sceneButtons(sc.filter(y => !y.line && y.kind !== 'after'), y => { y.also = it.line; commit() }))
+    case 'line1': return row(btn('Move back to the main plot', () => { s.line = ''; commit() }),
+      btn('Add a scene to the thread', () => addScene({ after: s.id, line: it.line, link: 'so' }), 'btn alt'))
+    case 'lineend': {
+      const ln = S.lines.find(l => l.id === it.line)
+      return row(btn(`Yes, it resolves in scene ${sceneNo(s.id)}`, () => { ln.done = true; commit() }),
+        btn('Add an ending for the thread', () => addScene({ after: s.id, line: it.line, link: 'so' }), 'btn alt'))
+    }
+    case 'focus2': return row(btn('Make it a plot scene', () => { s.kind = ''; commit() }), btn('Delete scene', () => delScene(s.id), 'btn alt'))
+    case 'out': return h('div', {}, h('div', { class: 'quote' }, short(s.text, 140)),
+      row(btn('Better', () => { s.out = 'up'; commit() }), btn('Worse', () => { s.out = 'down'; commit() })))
+    case 'grow': return ideas('but', t => addScene({ part: 'mid', text: t, link: 'but', out: 'down' }))
+    case 'mono': return ideas(it.deck, t => addScene({ after: it.after, text: t, link: it.deck, out: it.deck === 'so' ? 'up' : 'down' }), it.key)
+    case 'cost': return inputAnswer(S.cost || '', 'what is lost', v => { S.cost = v; commit() })
+    case 'dark': return ideas('dark', t => addScene({ part: 'mid', text: t, link: 'but', out: 'down' }))
+    case 'driver': { const g = G(); return row(btn(`${cap(g.pron)} ${g.v('does', 'do')} it ${g.self}`, () => { S.driver = 'hero'; commit() }), btn('Luck or someone else', () => { S.driver = 'world'; commit() }, 'btn alt')) }
+    case 'passive': return h('div', {},
+      ideas('hero', t => { S.driver = 'hero'; addScene({ part: 'end', text: t, link: 'so' }) }),
+      h('div', { style: 'margin-top:8px' }, btn('Rewritten: the hero decides it now', () => { S.driver = 'hero'; commit() }, 'btn alt')))
+    case 'clash': {
+      const opp = s.out === 'up' ? 'down' : 'up'
+      return row(btn('Change the ending', () => { S.ending = ''; commit() }), btn(`Scene: ${opp === 'up' ? 'better' : 'worse'}`, () => { s.out = opp; commit() }, 'btn alt'))
+    }
+    case 'late': return h('div', {}, sceneButtons(sc.filter(y => y.part !== 'end'), y => { y.who.push(it.cast); commit() }))
+    case 'castwant': return inputAnswer('', 'what they are after', v => { castOf(it.cast).want = v; commit() }, () => prompts('interview', it.key, castOf(it.cast).name))
+    case 'gone': return h('div', {}, sceneButtons(sc.filter(y => y.part === 'mid'), y => { y.who.push(it.cast); commit() }))
+    case 'addsecret': return inputAnswer('', 'Who is hiding what', v => { S.secrets.push({ id: uid(), text: v, hint: '', reveal: '' }); commit() }, inp => material('secret', inp, it.key))
+    case 'reveal': return h('div', {}, sceneButtons(sc, y => { x.reveal = y.id; commit() }))
+    case 'hint': {
+      const before = sc.slice(0, sc.findIndex(y => y.id === x.reveal))
+      return before.length
+        ? h('div', {}, sceneButtons(before, y => { x.hint = y.id; commit() }))
+        : h('div', {}, h('p', {}, "It's revealed in the first scene, so there's no room for a hint. Move the reveal later:"), sceneButtons(sc.slice(1), y => { x.reveal = y.id; commit() }))
+    }
+    case 'lure': {
+      const inp = h('input', { class: 'field', id: 'answer', value: x.lureText || '', placeholder: 'What they believe instead of the truth' })
+      return h('div', {}, inp, h('div', { class: 'label', style: 'margin:10px 0 6px' }, 'In which scene are readers convinced of it?'),
+        sceneButtons(sc.slice(0, sc.findIndex(y => y.id === x.reveal)), y => { x.lureText = inp.value.trim(); x.lure = y.id; commit() }))
+    }
+    case 'goal': {
+      const inp = h('input', { class: 'field', id: 'answer', placeholder: 'The new goal' })
+      return h('div', {}, inp, h('div', { class: 'label', style: 'margin:10px 0 6px' }, 'From which scene?'),
+        sceneButtons(sc.filter(y => y.part === 'mid'), y => { if (!inp.value.trim()) return inp.focus(); S.goals = [...(S.goals || []), { scene: y.id, text: inp.value.trim() }]; commit() }),
+        btn('No, one goal throughout', () => { S.goalFixed = true; commit() }, 'btn alt'))
+    }
+    case 'goalmove': return h('div', {}, sceneButtons(sc.filter(y => y.part === 'mid'), y => { S.goals.find(g => g.scene === it.goal).scene = y.id; commit() }))
+    case 'goalend': return row(btn('Yes, both', () => { S.goalAnswered = 'both'; commit() }), btn('The first one drops away, on purpose', () => { S.goalAnswered = 'dropped'; commit() }, 'btn alt'))
+  }
+}
+
+function renderAsk(typing = false) {
+  const box = $('#ask'); box.innerHTML = ''
+  const L = issues(), it = L.find(x => x.key === picked) || L[0]
+  $('#tab-work').innerHTML = ''; $('#tab-work').append('Outline', L.length ? h('span', { class: 'count' }, L.length) : '')
+  document.querySelectorAll('.scene.focus').forEach(e => e.classList.remove('focus'))
+  const skippedLink = () => S.skipped.length ? btn(`Bring back skipped (${S.skipped.length})`, () => { S.skipped = []; commit() }, 'skip') : null
+  if (!it) {
+    box.append(h('div', { class: 'label' }, 'Butwhy'), h('h3', {}, 'No questions left'),
+      h('p', {}, 'Every scene follows from the last and changes something, and the secrets are set up. Look at the plan, or add a scene and Butwhy checks again.'),
+      row(btn('Open the plan', () => setView('plan')), skippedLink()))
+    return
+  }
+  box.append(h('div', { class: 'label' }, `But why? · ${L.length} ${plural(L.length, 'question', 'questions')}`), h('h3', {}, it.q), h('p', {}, it.h), controls(it))
+  const el = it.scene && document.querySelector(`[data-scene="${it.scene}"]`)
+  if (el) { el.classList.add('focus'); if (!typing && lastScrolled !== it.key) { lastScrolled = it.key; el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) } }
+  box.append(h('div', { class: 'row', style: 'margin-top:12px;justify-content:space-between' },
+    btn('Skip', () => { S.skipped.push(it.key); picked = null; commit() }, 'skip'), skippedLink()))
+  if (L.length > 1) {
+    const d = h('details', { open: listOpen }, h('summary', {}, `All questions (${L.length})`),
+      L.map(x => h('button', { class: 'qitem' + (x === it ? ' on' : ''), type: 'button', onclick: () => { picked = x.key; lastScrolled = null; renderAsk() } }, x.q)))
+    d.addEventListener('toggle', () => { listOpen = d.open })
+    box.append(d)
+  }
+}
+
+function seg(options, value, onPick) {
+  return h('div', { class: 'seg', role: 'group' }, options.map(([k, label]) =>
+    h('button', { type: 'button', class: k, 'aria-pressed': String(value === k), onclick: () => onPick(value === k ? '' : k) }, label)))
+}
+function fit(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px' }
+
+function premiseBlock() {
+  const blankSpan = k => {
+    const [, ph] = blanks().find(b => b[0] === k)
+    const el = h('span', { class: 'blank' + (k === 'stakes' ? ' need' : ''), contenteditable: 'true', role: 'textbox', 'aria-label': ph, 'data-ph': ph, spellcheck: 'true' })
+    el.textContent = S.premise[k]
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur() } })
+    el.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData.getData('text/plain') || '').replace(/\s+/g, ' ')) })
+    el.addEventListener('input', () => { if (!el.textContent.trim()) el.innerHTML = ''; S.premise[k] = el.textContent.trim(); save(); renderAsk(true) })
+    el.addEventListener('blur', () => render())
+    return el
+  }
+  const [a, b, c, d] = sentenceGlue()
+  const pickKind = v => { if (!v) return; S.kind = v; if (v === 'group') S.gender = 'pl'; else if (S.gender === 'pl') S.gender = v === 'person' ? 'm' : 'n'; commit() }
+  return h('div', { class: 'premise' },
+    h('div', { class: 'row' }, h('span', { class: 'label' }, 'Premise · the hero is a'),
+      seg(HERO_KINDS, S.kind || 'person', pickKind), seg(GENDERS, S.gender || 'm', v => { if (v) { S.gender = v; commit() } })),
+    h('div', { class: 'sentence' }, blankSpan('who'), a, blankSpan('want'), b, blankSpan('but'), c, blankSpan('stakes'), d),
+    goalRows())
+}
+
+function goalRows() {
+  const sc = ordered(), goals = S.goals || []
+  const rows = goals.map(x => {
+    const sel = h('select', { 'aria-label': 'Scene where the goal changes', class: 'genre' }, sc.map(s => h('option', { value: s.id }, `from scene ${sceneNo(s.id)}`)))
+    sel.value = x.scene; sel.addEventListener('change', () => { x.scene = sel.value; commit() })
+    const t = h('input', { class: 'goal-text', value: x.text, placeholder: 'the new goal', 'aria-label': 'New goal' })
+    t.addEventListener('input', () => { x.text = t.value; save(); renderAsk(true) }); t.addEventListener('change', render)
+    return h('div', { class: 'goal' }, sel, t, btn('×', () => { S.goals = goals.filter(y => y !== x); commit() }, 'del'))
+  })
+  const add = sc.length ? btn('+ the goal changes', () => { S.goals = [...goals, { scene: (sc.find(s => s.part === 'mid') || sc.at(-1)).id, text: '' }]; commit(); [...document.querySelectorAll('.goal-text')].at(-1)?.focus() }, 'skip') : null
+  return h('div', { class: 'goals' }, rows, add)
+}
+
+const SCENE_KINDS = [['', 'plot'], ['theme', 'theme'], ['after', 'epilogue']]
+function kindSelect(s) {
+  const sel = h('select', { class: 'genre', 'aria-label': 'Scene type' }, SCENE_KINDS.map(([k, l]) => h('option', { value: k }, l)))
+  sel.value = s.kind || ''; sel.addEventListener('change', () => { s.kind = sel.value; commit() })
+  return sel
+}
+function lineSelect(s) {
+  const sel = h('select', { class: 'genre', 'aria-label': 'Thread' }, h('option', { value: '' }, 'main plot'),
+    (S.lines || []).map(l => h('option', { value: l.id }, 'thread: ' + l.name)), h('option', { value: '+' }, '+ new thread…'))
+  sel.value = s.line || ''
+  sel.addEventListener('change', () => {
+    if (sel.value !== '+') { s.line = sel.value; commit(); return }
+    const inp = h('input', { class: 'chip-input', placeholder: 'Thread name', 'aria-label': 'Thread name' })
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && inp.value.trim()) { const l = { id: uid(), name: inp.value.trim() }; S.lines = [...(S.lines || []), l]; s.line = l.id; commit() }
+      if (e.key === 'Escape') render()
+    })
+    sel.replaceWith(inp); inp.focus()
+  })
+  return sel
+}
+function alsoSelect(s) {
+  if (!(S.lines || []).length) return null
+  const opts = [['', 'meets no thread'], ...(s.line ? [['_main', 'meets: main plot']] : []), ...S.lines.filter(l => l.id !== s.line).map(l => [l.id, 'meets: ' + l.name])]
+  const sel = h('select', { class: 'genre', 'aria-label': 'Meets another thread' }, opts.map(([k, l]) => h('option', { value: k }, l)))
+  sel.value = s.also || ''; sel.addEventListener('change', () => { s.also = sel.value; commit() })
+  return sel
+}
+
+function sceneCard(s, i) {
+  const ta = h('textarea', { rows: 1, placeholder: 'What happens?', value: s.text, id: 'scene-' + s.id, 'aria-label': `Scene ${i + 1}` })
+  ta.addEventListener('input', () => { s.text = ta.value; fit(ta); save(); renderAsk(true) })
+  ta.addEventListener('change', () => render())
+  let adding = null
+  const addCast = btn('+ someone', () => {
+    adding = h('input', { class: 'chip-input', placeholder: 'Name', 'aria-label': 'Character name' })
+    adding.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && adding.value.trim()) { const c = { id: uid(), name: adding.value.trim(), want: '' }; S.cast.push(c); s.who.push(c.id); commit() }
+      if (e.key === 'Escape') render()
+    })
+    addCast.replaceWith(adding); adding.focus()
+  }, 'chip')
+  const marks = [
+    ...(S.goals || []).filter(x => x.scene === s.id).map(x => h('span', { class: 'badge goal-badge' }, 'new goal: ' + short(x.text, 30))),
+    ...S.secrets.flatMap(x => [x.lure === s.id && h('span', { class: 'badge lure' }, 'red herring: ' + short(x.lureText || x.text, 30)), x.hint === s.id && h('span', { class: 'badge' }, 'hint: ' + short(x.text, 30)), x.reveal === s.id && h('span', { class: 'badge rev' }, 'reveal: ' + short(x.text, 30))]),
+  ].filter(Boolean)
+  return h('div', { class: 'scene', 'data-scene': s.id },
+    h('span', { class: 'num' }, i + 1), ta,
+    h('div', { class: 'meta' }, h('span', { class: 'label' }, 'Who'),
+      S.cast.map(c => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(s.who.includes(c.id)), onclick: () => { s.who = s.who.includes(c.id) ? s.who.filter(y => y !== c.id) : [...s.who, c.id]; commit() } }, castName(c))), addCast),
+    h('div', { class: 'meta' }, h('span', { class: 'label' }, 'For the hero'), seg(OUTS, s.out, v => { s.out = v; commit() }), lineSelect(s), alsoSelect(s), kindSelect(s), marks,
+      btn('Delete', () => delScene(s.id), 'del')))
+}
+
+function renderChain() {
+  const root = $('#chain'); root.innerHTML = ''
+  root.append(premiseBlock())
+  const sc = ordered()
+  for (const [p, title, sub] of PARTS) {
+    const sec = h('section', { class: 'part' }, h('div', { class: 'part-head' }, h('h2', {}, title), h('span', { class: 'sub' }, sub),
+      p === 'end' && S.ending ? h('button', { class: 'end-badge', type: 'button', title: 'Change the ending', onclick: () => { S.ending = ''; S.skipped = S.skipped.filter(k => k !== 'ending'); commit() } }, 'Ending: ' + endLabel(S.ending)) : null))
+    for (const s of sc.filter(x => x.part === p)) {
+      const i = sc.indexOf(s)
+      const prev = prevOf(s, sc)
+      if (i) sec.append(h('div', { class: 'link' },
+        s.kind ? h('span', { class: 'note' }, s.kind === 'theme' ? "theme scene: doesn't continue the chain" : 'epilogue: after the climax')
+          : !prev ? h('span', { class: 'note' }, s.line ? `start of thread “${lineName(s.line)}”` : 'first scene of the main plot')
+          : [seg(LINKS, s.link, v => { s.link = v; commit() }),
+            prev !== sc[i - 1] ? h('span', { class: 'note' }, `with scene ${sc.indexOf(prev) + 1}`) : null,
+            !s.link ? h('span', { class: 'q' }, 'how is it linked to the last one?') : null]))
+      sec.append(sceneCard(s, i))
+    }
+    sec.append(btn('+ scene', () => addScene({ part: p }), 'add'))
+    root.append(sec)
+  }
+}
+
+// Decks for when there are no questions, but the writing still won't move.
+const DECK_TABS = [['oracle', 'Oracle'], ['provoke', 'Shift'], ['moves', 'Moves'], ['mine', 'My cards']]
+const ODDS = [['low', 'unlikely'], ['even', '50/50'], ['high', 'likely']]
+const ODDS_P = { low: 25, even: 50, high: 75 }
+let oracle = { q: '', odds: 'even', res: null }
+
+function oracleBlock() {
+  const q = h('input', { class: 'field', id: 'oracle-q', value: oracle.q, placeholder: 'A yes/no question: does Tim come back?' })
+  const roll = () => {
+    const yes = Math.random() * 100 < ODDS_P[oracle.odds], d = 1 + Math.floor(Math.random() * 6)
+    const mod = d === 1 ? 'but' : d === 6 ? 'and' : ''
+    // "and" strengthens the answer, "but" undercuts it: a stronger yes or a consolation draws a "therefore" card, the rest a "but".
+    const list = mod ? deckList(yes === (mod === 'and') ? 'so' : 'but') : []
+    const nm = castNames()
+    const card = list.length ? list[Math.floor(Math.random() * list.length)].t.replace('{x}', nm[Math.floor(Math.random() * nm.length)]) : ''
+    oracle.res = { q: oracle.q.trim(), yes, mod, card }
+    renderDecks()
+  }
+  q.addEventListener('input', () => { oracle.q = q.value })
+  q.addEventListener('keydown', e => { if (e.key === 'Enter') roll() })
+  const r = oracle.res
+  const word = r && (r.yes ? 'Yes' : 'No') + (r.mod ? `, ${r.mod}…` : '')
+  return h('div', {}, h('p', { class: 'note' }, "Don't know which way to turn? Ask, and accept the answer."), q,
+    h('div', { class: 'row', style: 'margin-top:8px' }, seg(ODDS, oracle.odds, v => { oracle.odds = v || 'even'; renderDecks() }), btn('Ask', roll)),
+    r ? h('div', { class: 'oracle-res' }, h('div', { class: 'note' }, r.q || 'No question'), h('div', { class: 'oracle-word' }, word),
+      r.card ? h('div', { class: 'prompt' }, r.card) : null,
+      btn('Make it a scene', () => addScene({ part: 'mid', text: `${r.q ? r.q + ' ' : ''}${r.yes ? 'Yes' : 'No'}.${r.card ? ' ' + r.card + '.' : ''}`, link: r.yes ? 'so' : 'but' }), 'btn alt')) : null)
+}
+
+function mineBlock() {
+  const kind = h('select', { class: 'field', id: 'my-kind', 'aria-label': 'Card type' }, MY_KINDS.map(([k, l]) => h('option', { value: k }, l)))
+  const t = h('input', { class: 'field', id: 'my-text', placeholder: 'Card text; {x} becomes a character name' })
+  const add = () => { if (!t.value.trim()) return; MY.push({ id: uid(), deck: kind.value, text: t.value.trim() }); saveMy(); for (const k in offs) delete offs[k]; render(); $('#my-kind').value = kind.value; $('#my-text').focus() }
+  t.addEventListener('keydown', e => { if (e.key === 'Enter') add() })
+  const label = Object.fromEntries(MY_KINDS)
+  return h('div', {}, h('p', { class: 'note' }, 'Your cards come first among the options and survive “New story”.'),
+    MY.length ? h('ul', { class: 'my-list' }, MY.map(c => h('li', {}, h('span', { class: 'badge' }, label[c.deck]), h('span', { style: 'flex:1' }, c.text),
+      btn('×', () => { MY = MY.filter(y => y !== c); saveMy(); render() }, 'del')))) : null,
+    h('div', { style: 'display:grid;gap:8px;margin-top:8px' }, kind, t, h('div', {}, btn('Add card', add))))
+}
+
+function renderDecks() {
+  const box = $('#decks'); box.innerHTML = ''
+  box.append(h('div', { class: 'box-head' }, h('span', { class: 'label' }, 'Stuck? Decks')), seg(DECK_TABS, deckTab, v => { deckTab = v; renderDecks() }))
+  const body = h('div', { style: 'margin-top:10px' })
+  const toScene = link => c => h('button', { class: 'idea', type: 'button', onclick: () => addScene({ part: 'mid', text: c.t + ': ', link, out: link === 'but' ? 'down' : '' }) }, cardText(c))
+  if (deckTab === 'oracle') body.append(oracleBlock())
+  if (deckTab === 'provoke') body.append(h('p', { class: 'note' }, 'Not plot, a change of angle. Try one on the scene you are stuck on.'), cardBlock('tab-provoke', null, () => deckList('provoke'), 3, c => h('div', { class: 'prompt' }, cardText(c))))
+  if (deckTab === 'moves') body.append(h('p', { class: 'note' }, 'Click a card and it becomes a scene at the end of the middle.'), cardBlock('tab-but', 'But', () => deckList('but'), 2, toScene('but')), cardBlock('tab-so', 'Therefore', () => deckList('so'), 2, toScene('so')))
+  if (deckTab === 'mine') body.append(mineBlock())
+  if (deckTab) box.append(body)
+}
+
+function renderCast() {
+  const box = $('#cast'); box.innerHTML = ''
+  const sc = ordered()
+  box.append(h('div', { class: 'box-head' }, h('span', { class: 'label' }, 'Cast'), h('span', { class: 'note' }, 'dots are scenes')))
+  for (const c of S.cast) {
+    const n = sc.filter(s => s.who.includes(c.id)).length
+    const dots = h('div', { class: 'dots', 'aria-label': `${castName(c)}: in ${n} ${plural(n, 'scene', 'scenes')}` })
+    PARTS.forEach(([p], pi) => {
+      if (pi && count(p)) dots.append(h('span', { class: 'gap' }))
+      sc.filter(s => s.part === p).forEach(s => dots.append(h('span', { class: 'dot' + (s.who.includes(c.id) ? ' on' : ''), title: `Scene ${sceneNo(s.id)}` })))
+    })
+    let line
+    if (c.hero) line = h('div', { class: 'line' }, h('span', { class: 'name' }, castName(c)), h('span', { class: 'want' }, sentenceGlue()[0].trim() + ' ' + (S.premise.want || '…')))
+    else {
+      const name = h('input', { class: 'name', value: c.name, 'aria-label': 'Name' })
+      const want = h('input', { class: 'want', value: c.want, placeholder: 'wants what?', 'aria-label': `What ${c.name} wants` })
+      name.addEventListener('input', () => { c.name = name.value; save() }); name.addEventListener('change', render)
+      want.addEventListener('input', () => { c.want = want.value; save(); renderAsk(true) }); want.addEventListener('change', render)
+      const isFoe = (S.foe || []).includes(c.id)
+      const foeChip = h('button', { class: 'chip', type: 'button', 'aria-pressed': String(isFoe), title: 'Antagonist', onclick: () => { S.foe = isFoe ? S.foe.filter(y => y !== c.id) : [...(S.foe || []), c.id]; commit() } }, 'foe')
+      line = h('div', { class: 'line' }, name, want, foeChip, btn('×', () => { S.cast = S.cast.filter(y => y !== c); S.scenes.forEach(s => { s.who = s.who.filter(y => y !== c.id) }); commit() }, 'del'))
+    }
+    box.append(h('div', { class: 'cast-row' }, line, dots))
+  }
+}
+
+function renderSecrets() {
+  const box = $('#secrets'); box.innerHTML = ''
+  const sc = ordered()
+  const pickScene = (value, label, onPick) => {
+    const sel = h('select', { 'aria-label': label }, h('option', { value: '' }, '—'), sc.map(s => h('option', { value: s.id }, `scene ${sceneNo(s.id)}`)))
+    sel.value = value; sel.addEventListener('change', () => onPick(sel.value)); return sel
+  }
+  box.append(h('div', { class: 'box-head' }, h('span', { class: 'label' }, 'Secrets'), btn('+ secret', () => { S.secrets.push({ id: uid(), text: '', hint: '', reveal: '' }); commit(); const l = document.querySelectorAll('.secret input'); l[l.length - 1]?.focus() }, 'skip')))
+  if (!S.secrets.length) box.append(h('div', { class: 'note' }, 'No one is hiding anything yet.'))
+  for (const x of S.secrets) {
+    const t = h('input', { value: x.text, placeholder: 'What is hidden, and by whom', 'aria-label': 'Secret' })
+    t.addEventListener('input', () => { x.text = t.value; save() }); t.addEventListener('change', render)
+    const lt = h('input', { value: x.lureText || '', placeholder: 'what readers believe instead', 'aria-label': 'Red herring' })
+    lt.addEventListener('input', () => { x.lureText = lt.value; save() }); lt.addEventListener('change', render)
+    box.append(h('div', { class: 'secret' }, t, h('div', { class: 'line' },
+      'hint', pickScene(x.hint, 'Hint scene', v => { x.hint = v; commit() }),
+      'reveal', pickScene(x.reveal, 'Reveal scene', v => { x.reveal = v; commit() }),
+      btn('×', () => { S.secrets = S.secrets.filter(y => y !== x); commit() }, 'del')),
+      h('div', { class: 'line' }, 'red herring', pickScene(x.lure || '', 'Red herring scene', v => { x.lure = v; commit() }), x.lure ? lt : null)))
+  }
+}
+
+// The plan is what you take away. The same text goes to the clipboard.
+const LINK_WORD = { so: 'therefore', but: 'but', then: 'and then' }
+const OUT_WORD = { up: 'better', down: 'worse' }
+function planModel() {
+  const p = S.premise, sc = ordered(), f = v => v || '…'
+  const parts = PARTS.map(([k, title]) => ({ title, scenes: sc.filter(s => s.part === k).map(s => ({
+    // No link tag if the scene already starts with that word ("Therefore she goes…").
+    n: sceneNo(s.id), link: prevOf(s, sc) && !s.kind && !s.text.trim().toLowerCase().startsWith(LINK_WORD[s.link || 'then']) ? s.link || 'then' : '', text: s.text.trim() || '(empty)', out: s.out,
+    marks: [s.line && `thread: ${lineName(s.line)}`, s.also && `meets: ${s.also === '_main' ? 'main plot' : lineName(s.also)}`, s.kind === 'theme' && 'theme scene', s.kind === 'after' && 'epilogue',
+      ...(S.goals || []).filter(x => x.scene === s.id).map(x => `new goal: ${x.text}`),
+      ...S.secrets.flatMap(x => [x.lure === s.id ? `red herring: ${x.lureText || x.text}` : '', x.hint === s.id ? `hint: ${x.text}` : '', x.reveal === s.id ? `reveal: ${x.text}` : ''])].filter(Boolean),
+  })) })).filter(x => x.scenes.length)
+  return {
+    sentence: (([a, b, c, d]) => `${f(p.who)}${a}${f(p.want)}${b}${f(p.but)}${c}${f(p.stakes)}${d}`)(sentenceGlue()),
+    ending: [S.ending && 'Ending: ' + endLabel(S.ending) + (S.ending === 'cost' && S.cost ? ` (price: ${S.cost})` : ''),
+      G().agent && S.driver && `the outcome is decided ${S.driver === 'hero' ? 'by the hero' : 'by someone else'}`,
+      !G().agent && S.proxy && castOf(S.proxy) && `${castOf(S.proxy).name} acts for the hero`,
+      G().kind === 'group' && S.glue && `held together by ${S.glue}`,
+      (S.foe || []).some(id => castOf(id)) ? `antagonist: ${S.foe.filter(id => castOf(id)).map(id => castOf(id).name).join(', ')}` : S.foeNone && 'antagonist: a faceless force',
+    ].filter(Boolean).join('; '), parts,
+    goals: (S.goals || []).filter(x => x.text.trim() && sceneNo(x.scene)).map(x => `From scene ${sceneNo(x.scene)} the goal is: ${x.text}`)
+      .concat(S.goalAnswered ? [S.goalAnswered === 'both' ? 'The ending answers both goals.' : 'The first goal drops away, on purpose.'] : []),
+    cast: S.cast.map(c => ({ name: castName(c), want: c.hero ? p.want : c.want })),
+    secrets: S.secrets.filter(x => x.text.trim()).map(x => ({ text: x.text, hint: x.hint ? sceneNo(x.hint) : 0, reveal: x.reveal ? sceneNo(x.reveal) : 0,
+      lure: x.lure && sceneNo(x.lure) ? `red herring in scene ${sceneNo(x.lure)}${x.lureText ? ` (readers think: ${x.lureText})` : ''}` : '' })),
+  }
+}
+function planText() {
+  const m = planModel(), out = [m.sentence]
+  if (m.ending) out.push(`${m.ending}.`)
+  out.push(...m.goals)
+  for (const part of m.parts) {
+    out.push('', part.title)
+    part.scenes.forEach(s => out.push(`${s.n}. ${s.link ? `[${LINK_WORD[s.link]}] ` : ''}${s.text}${s.out ? ` (${OUT_WORD[s.out]})` : ''}${s.marks.length ? ` · ${s.marks.join('; ')}` : ''}`))
+  }
+  out.push('', 'Cast'); m.cast.forEach(c => out.push(`- ${c.name}: ${c.want || '?'}`))
+  if (m.secrets.length) { out.push('', 'Secrets'); m.secrets.forEach(x => out.push(`- ${x.text}: hint ${x.hint ? 'in scene ' + x.hint : 'not set'}, reveal ${x.reveal ? 'in scene ' + x.reveal : 'not set'}${x.lure ? ', ' + x.lure : ''}`)) }
+  return out.join('\n')
+}
+function renderPlan() {
+  const r = $('#plan'); r.innerHTML = ''
+  const m = planModel(), sc = ordered(), L = issues()
+  const links = k => sc.filter((s, i) => i && s.link === k).length
+  const copyBtn = btn('Copy as text', async () => {
+    try { await navigator.clipboard.writeText(planText()); copyBtn.textContent = 'Copied' }
+    catch (e) { const pre = h('textarea', { class: 'field', rows: 12, value: planText() }); r.append(pre); pre.select(); copyBtn.textContent = 'Select and copy the text below' }
+  }, 'ghost')
+  r.append(h('div', { class: 'plan-bar' }, h('span', { class: 'muted' }, `${sc.length} ${plural(sc.length, 'scene', 'scenes')} · “but” ${links('but')} · “therefore” ${links('so')}`), copyBtn))
+  r.append(h('div', { class: 'label', style: 'margin-top:24px' }, 'Premise'), h('h1', {}, m.sentence))
+  if (m.ending) r.append(h('div', { class: 'note' }, m.ending))
+  m.goals.forEach(t => r.append(h('div', { class: 'note' }, t)))
+  for (const part of m.parts) {
+    r.append(h('h2', {}, part.title))
+    r.append(h('ol', { start: part.scenes[0].n }, part.scenes.map(s => h('li', {},
+      s.link ? h('span', { class: 'lk ' + s.link }, LINK_WORD[s.link]) : null, s.text,
+      s.out || s.marks.length ? h('div', { class: 'note' }, [s.out ? OUT_WORD[s.out] : '', ...s.marks].filter(Boolean).join(' · ')) : null))))
+  }
+  r.append(h('h2', {}, 'Cast'), h('ul', {}, m.cast.map(c => h('li', {}, h('b', {}, c.name), ' — ', c.want || h('span', { class: 'muted' }, 'wants: unknown')))))
+  if (m.secrets.length) r.append(h('h2', {}, 'Secrets'), h('ul', {}, m.secrets.map(x => h('li', {}, x.text, h('div', { class: 'note' },
+    `hint ${x.hint ? 'in scene ' + x.hint : 'not set'} · reveal ${x.reveal ? 'in scene ' + x.reveal : 'not set'}${x.lure ? ' · ' + x.lure : ''}`)))))
+  if (L.length) r.append(h('div', { class: 'warnline' }, `Butwhy still has ${L.length} ${plural(L.length, 'question', 'questions')}. First: ${L[0].q} `, btn('Answer', () => setView('work'), 'skip')))
+}
+
+// Threads view: a metro map. A line is a thread, a station is a scene, an interchange is where threads meet. Read-only.
+const LINE_COLORS = ['var(--but)', 'var(--so)', 'var(--then)', 'var(--accent)']
+function sv(tag, attrs, ...kids) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag)
+  for (const [k, v] of Object.entries(attrs || {})) if (v != null) el.setAttribute(k, v)
+  for (const c of kids.flat()) if (c != null) el.append(c.nodeType ? c : document.createTextNode(String(c)))
+  return el
+}
+function openScene(id) {
+  setView('work')
+  const el = document.querySelector(`[data-scene="${id}"]`)
+  if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('focus'); el.querySelector('textarea')?.focus({ preventScroll: true }) }
+}
+function renderLines() {
+  const r = $('#lines'); r.innerHTML = ''
+  const sc = ordered()
+  const lanes = [{ id: '', name: 'Main plot', color: 'var(--text)', w: 5 }, ...(S.lines || []).map((l, i) => ({ id: l.id, name: l.name, color: LINE_COLORS[i % LINE_COLORS.length], w: 3 }))]
+  const lanesOf = s => lanes.filter(l => inLine(s, l.id))
+  r.append(h('p', { class: 'note' }, 'Each thread is a line. An interchange is a scene where threads meet. Click a station to open the scene.'))
+  if (!sc.length) { r.append(h('p', {}, 'No scenes yet.')); return }
+  if (lanes.length < 2) r.append(h('p', { class: 'note' }, 'No subplots yet. Pick “+ new thread…” on a scene and it shows up here as its own line.'))
+  const left = 110, col = 46, top = 48, laneH = 64
+  const W = left + sc.length * col + 16, H = top + lanes.length * laneH + 8
+  const X = i => left + i * col + col / 2, Y = k => top + k * laneH + laneH / 2
+  const svg = sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, class: 'metro', role: 'img', 'aria-label': 'Map of story threads' })
+  PARTS.forEach(([p, title]) => {
+    const idx = sc.map((s, i) => s.part === p ? i : -1).filter(i => i >= 0)
+    if (!idx.length) return
+    const x0 = left + idx[0] * col, x1 = left + (idx.at(-1) + 1) * col
+    svg.append(sv('rect', { x: x0 + 2, y: 4, width: x1 - x0 - 4, height: H - 8, rx: 8, class: 'band' }), sv('text', { x: x0 + 10, y: 20, class: 'band-label' }, title))
+  })
+  sc.forEach((s, i) => svg.append(sv('text', { x: X(i), y: 40, class: 'num-label', 'text-anchor': 'middle' }, i + 1)))
+  sc.forEach((s, i) => {
+    const ks = lanes.map((l, k) => inLine(s, l.id) ? k : -1).filter(k => k >= 0)
+    if (ks.length > 1) svg.append(sv('rect', { x: X(i) - 11, y: Y(ks[0]) - 11, width: 22, height: Y(ks.at(-1)) - Y(ks[0]) + 22, rx: 11, class: 'transfer' }))
+  })
+  lanes.forEach((l, k) => {
+    const idx = sc.map((s, i) => inLine(s, l.id) ? i : -1).filter(i => i >= 0)
+    svg.append(sv('text', { x: 8, y: Y(k) + 4, class: 'lane-label', style: `fill:${l.color}` }, short(l.name, 13)))
+    if (idx.length > 1) svg.append(sv('line', { x1: X(idx[0]), y1: Y(k), x2: X(idx.at(-1)), y2: Y(k), 'stroke-linecap': 'round', style: `stroke:${l.color};stroke-width:${l.w}` }))
+    for (const i of idx) {
+      const s = sc[i], style = `stroke:${l.color};fill:${s.out === 'up' ? l.color : 'var(--surface)'}`
+      const mark = s.kind === 'after' ? sv('rect', { x: X(i) - 6, y: Y(k) - 6, width: 12, height: 12, rx: 2, style })
+        : sv('circle', { cx: X(i), cy: Y(k), r: 7, style, class: s.kind === 'theme' ? 'theme' : null })
+      const g = sv('g', { class: 'station', tabindex: 0, role: 'button', 'aria-label': `Scene ${i + 1}: ${short(s.text, 80)}` }, sv('title', {}, `${i + 1}. ${s.text}`), mark)
+      g.addEventListener('click', () => openScene(s.id))
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openScene(s.id) } })
+      svg.append(g)
+    }
+  })
+  r.append(h('div', { class: 'metro-wrap' }, svg),
+    h('p', { class: 'note' }, 'Filled: better for the hero; hollow: worse. Dashed: theme scene. Square: epilogue. A capsule across lines: an interchange.'))
+  const cross = sc.filter(s => lanesOf(s).length > 1)
+  r.append(h('h2', {}, 'Where threads meet'))
+  r.append(cross.length ? h('ul', {}, cross.map(s => h('li', {}, h('b', {}, `Scene ${sceneNo(s.id)}: `), lanesOf(s).map(l => l.name).join(' × '), ' — ', short(s.text, 100))))
+    : h('p', { class: 'note' }, 'Nowhere yet. If two threads meet in a scene, mark it with “meets”.'))
+  r.append(h('h2', {}, 'Threads'), h('ul', {}, lanes.map(l => {
+    const ls = sc.filter(s => inLine(s, l.id)), c = ls.filter(s => lanesOf(s).length > 1).length
+    return h('li', {}, h('b', { style: `color:${l.color}` }, l.name), ' — ', ls.length ? `scenes ${sceneNo(ls[0].id)}–${sceneNo(ls.at(-1).id)}, ${ls.length} ${plural(ls.length, 'scene', 'scenes')}, ${c} ${plural(c, 'meeting', 'meetings')}` : 'empty so far')
+  })))
+}
+
+function setView(v) { S.view = v; save(); render(); window.scrollTo(0, 0) }
+function render() {
+  const plan = S.view === 'plan', lines = S.view === 'lines'
+  $('#tab-work').setAttribute('aria-pressed', String(!plan && !lines)); $('#tab-plan').setAttribute('aria-pressed', String(plan)); $('#tab-lines').setAttribute('aria-pressed', String(lines))
+  $('#work').hidden = plan || lines; $('#plan').hidden = !plan; $('#lines').hidden = !lines
+  if (plan) { renderPlan(); renderAsk(true); return }
+  if (lines) { renderLines(); renderAsk(true); return }
+  renderChain(); renderDecks(); renderCast(); renderSecrets(); renderAsk()
+  requestAnimationFrame(() => document.querySelectorAll('.scene textarea').forEach(fit))
+}
+
+$('#tab-work').onclick = () => setView('work')
+$('#tab-plan').onclick = () => setView('plan')
+$('#tab-lines').onclick = () => setView('lines')
+$('#btn-example').onchange = e => { const make = EXAMPLES[e.target.value]; e.target.value = ''; if (!make) return; S = make(); picked = null; lastScrolled = null; commit(); window.scrollTo(0, 0) }
+$('#btn-paste').onclick = () => { $('#paste').hidden = !$('#paste').hidden; if (!$('#paste').hidden) $('#paste-text').focus() }
+$('#paste-cancel').onclick = () => { $('#paste').hidden = true }
+$('#paste-go').onclick = () => {
+  const scenes = parseOutline($('#paste-text').value)
+  if (!scenes.length) { $('#paste-text').focus(); return }
+  S = { ...blank(), scenes }
+  picked = null; lastScrolled = null
+  $('#paste').hidden = true; $('#paste-text').value = ''
+  commit(); window.scrollTo(0, 0)
+}
+$('#btn-blank').onclick = e => {
+  const b = e.currentTarget
+  if (blankArmed) { clearTimeout(blankArmed); blankArmed = null; b.textContent = 'New story'; b.classList.remove('warn'); S = blank(); picked = null; commit(); return }
+  b.textContent = 'Erase everything? Click again'; b.classList.add('warn')
+  blankArmed = setTimeout(() => { blankArmed = null; b.textContent = 'New story'; b.classList.remove('warn') }, 3000)
+}
+render()
+</script>
+</body>
+</html>
